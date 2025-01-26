@@ -1,11 +1,12 @@
 import pandas as pd
 import streamlit as st
+import altair as alt
 import os
 
 # 设置页面标题
-st.title("任务点完成详情6")
+st.title("任务点完成详情7")
 
-# 确保文件名为任务点完成详情.xlsx
+# 读取当前目录下的任务点完成详情.xlsx文件
 selected_file = '任务点完成详情.xlsx'
 
 # 检查文件是否存在
@@ -80,11 +81,19 @@ if os.path.exists(selected_file):
             # 对数据按完成率排序
             attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, ascending])
 
-            # 显示合并后的柱形图，按照完成率排序
+            # 创建柱形图并排序
             st.subheader(f"按 {selected_dimension} 维度分析")
 
-            # 调整柱形图显示：X轴为完成率，Y轴为选择的维度
-            st.bar_chart(attendance_by_dimension_sorted.set_index(selected_dimension)['完成率'])
+            # 创建柱形图，X轴为完成率，Y轴为选择的维度
+            bar_chart = alt.Chart(attendance_by_dimension_sorted).mark_bar().encode(
+                x=alt.X('完成率', sort='-x'),  # 确保按完成率降序排序
+                y=alt.Y(selected_dimension, sort='-x'),  # Y轴为维度列，按完成率排序
+                tooltip=[selected_dimension, '总人数', '已完成人数', '未完成人数', '完成率']
+            ).properties(
+                title=f"{selected_dimension} 的任务完成情况"
+            )
+
+            st.altair_chart(bar_chart, use_container_width=True)
 
             # 构建每个维度的信息表格
             table_data = []
