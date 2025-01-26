@@ -3,14 +3,15 @@ import streamlit as st
 import os
 
 # 设置页面标题
-st.title("任务点完成详情4")
+st.title("任务点完成详情5")
 
-# 文件上传功能
-uploaded_file = st.file_uploader("上传 Excel 文件", type=["xlsx"])
+# 确保文件名为任务点完成详情.xlsx
+selected_file = '任务点完成详情.xlsx'
 
-if uploaded_file is not None:
+# 检查文件是否存在
+if os.path.exists(selected_file):
     # 读取数据
-    df = pd.read_excel(uploaded_file)
+    df = pd.read_excel(selected_file)
 
     # 清理列名，去除可能的空格
     df.columns = df.columns.str.strip()
@@ -114,4 +115,4 @@ if uploaded_file is not None:
             # 显示表格，按完成率排序
             st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=ascending))
 else:
-    st.error("请上传一个xlsx文件。")
+    st.error("当前目录下没有找到'任务点完成详情.xlsx'文件。")
