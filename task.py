@@ -55,35 +55,41 @@ if os.path.exists(selected_file):
             # 动态分组，按用户选择的维度进行分组
             groupby_columns = [selected_dimension]
 
-            # 按选定维度进行合并统计：计算成绩的平均值
+            # 按选定维度进行合并统计：计算成绩的平均值、及格人数和及格率
             avg_watch_time_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人次=('姓名', 'size'),
-                平均成绩=('成绩', 'mean')  # 计算平均成绩
+                平均成绩=('成绩', 'mean'),  # 计算平均成绩
+                及格人数=('成绩', lambda x: (x >= 60).sum())  # 计算及格人数，假设60分及格
             ).reset_index()
+
+            # 计算及格率
+            avg_watch_time_by_dimension['及格率'] = (avg_watch_time_by_dimension['及格人数'] / avg_watch_time_by_dimension['总人次']) * 100
 
             # 确保成绩是数值格式，并且去除无效值
             avg_watch_time_by_dimension['平均成绩'] = pd.to_numeric(avg_watch_time_by_dimension['平均成绩'], errors='coerce')
+            avg_watch_time_by_dimension['及格率'] = pd.to_numeric(avg_watch_time_by_dimension['及格率'], errors='coerce')
 
             # 处理NaN和无效值，将它们设为0或者其他默认值
             avg_watch_time_by_dimension['平均成绩'] = avg_watch_time_by_dimension['平均成绩'].fillna(0)
+            avg_watch_time_by_dimension['及格率'] = avg_watch_time_by_dimension['及格率'].fillna(0)
 
-            # 对数据按平均成绩降序或升序排列
-            sort_order = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
-            ascending = False if sort_order == '降序' else True
+            # 用户选择排序依据：按“及格率”或“平均成绩”
+            sort_by = st.radio("选择排序依据", ('及格率', '平均成绩'), index=0)  # 默认按“及格率”排序
+            ascending = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
 
-            # 对数据按平均成绩排序
-            avg_watch_time_by_dimension_sorted = avg_watch_time_by_dimension.sort_values(by='平均成绩', ascending=ascending)
+            # 对数据按选择的列进行排序
+            avg_watch_time_by_dimension_sorted = avg_watch_time_by_dimension.sort_values(by=sort_by, ascending=(ascending == '升序'))
 
             # 创建柱形图并排序
             st.subheader(f"按 {selected_dimension} 维度分析")
 
-            # 创建柱形图，X轴为平均成绩，Y轴为选择的维度
+            # 创建柱形图，X轴为选定的排序列，Y轴为选择的维度
             bar_chart = alt.Chart(avg_watch_time_by_dimension_sorted).mark_bar().encode(
-                x=alt.X('平均成绩', sort='-x' if not ascending else 'x'),  # 确保根据升降序选择排序
-                y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),  # Y轴为维度列，按平均成绩排序
-                tooltip=[selected_dimension, '总人次', '平均成绩']
+                x=alt.X(sort_by, sort='-x' if ascending == '降序' else 'x'),  # 根据选择的排序列
+                y=alt.Y(selected_dimension, sort='-x' if ascending == '降序' else 'x'),  # Y轴为维度列，按选定排序列排序
+                tooltip=[selected_dimension, '总人次', '平均成绩', '及格率']
             ).properties(
-                title=f"{selected_dimension} 的成绩分析"
+                title=f"{selected_dimension} 的成绩及及格率分析"
             )
 
             st.altair_chart(bar_chart, use_container_width=True)
@@ -97,14 +103,14 @@ if os.path.exists(selected_file):
                 table_row.update({
                     "总人次": row['总人次'],
                     "平均成绩": f"{row['平均成绩']:.2f}",  # 显示平均成绩，带两位小数
+                    "及格率": f"{row['及格率']:.2f}%"  # 显示及格率，带两位小数并加上百分号
                 })
                 table_data.append(table_row)
 
-            # 显示表格，按照平均成绩排序
-            # 强制将“平均成绩”列的值转为数值类型，以确保正确排序
+            # 显示表格，按照用户选择的列排序
             df_table = pd.DataFrame(table_data)
-            df_table['平均成绩'] = pd.to_numeric(df_table['平均成绩'], errors='coerce')
-            st.table(df_table.sort_values(by='平均成绩', ascending=ascending))
+            df_table[sort_by] = pd.to_numeric(df_table[sort_by], errors='coerce')
+            st.table(df_table.sort_values(by=sort_by, ascending=(ascending == '升序')))
 
 else:
     st.error("当前目录下没有找到'作业统计.xlsx'文件。")
