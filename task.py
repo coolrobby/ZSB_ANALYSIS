@@ -20,6 +20,9 @@ if os.path.exists(selected_file):
     # 处理缺失值：将空字符串替换为 NaN
     df.replace('', pd.NA, inplace=True)
 
+    # 如果成绩为空，视为缺考
+    df['成绩'] = df['成绩'].fillna('缺考')
+
     # 获取所有可用的作业
     available_dates = df['作业'].unique()
     
@@ -55,42 +58,46 @@ if os.path.exists(selected_file):
             # 动态分组，按用户选择的维度进行分组
             groupby_columns = [selected_dimension]
 
-            # 按选定维度进行合并统计：计算成绩的平均值、及格人数和及格率
-            avg_watch_time_by_dimension = df_filtered.groupby(groupby_columns).agg(
+            # 按选定维度进行合并统计：计算成绩的平均值、及格人数、缺考人数等
+            stats_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人次=('姓名', 'size'),
-                平均成绩=('成绩', 'mean'),  # 计算平均成绩
-                及格人数=('成绩', lambda x: (x >= 60).sum())  # 计算及格人数，假设60分及格
+                平均成绩=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').mean()),  # 计算平均成绩，排除缺考
+                及格人数=('成绩', lambda x: (pd.to_numeric(x[x != '缺考'], errors='coerce') >= 60).sum()),  # 计算及格人数，排除缺考
+                实考人次=('成绩', lambda x: (x != '缺考').sum()),  # 计算有成绩的人数
+                缺考人数=('成绩', lambda x: (x == '缺考').sum()),  # 计算缺考人数
+                缺考名单=('姓名', lambda x: ", ".join(x[df['成绩'] == '缺考'])),  # 计算缺考名单
+                最高分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').max()),  # 计算最高分，排除缺考
+                最低分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').min())  # 计算最低分，排除缺考
             ).reset_index()
 
-            # 确保计算后的“平均成绩”和“及格人数”不包含空值
-            avg_watch_time_by_dimension['平均成绩'] = pd.to_numeric(avg_watch_time_by_dimension['平均成绩'], errors='coerce')
-            avg_watch_time_by_dimension['及格人数'] = pd.to_numeric(avg_watch_time_by_dimension['及格人数'], errors='coerce')
-
-            # 处理NaN和无效值，将它们设为0或者其他默认值
-            avg_watch_time_by_dimension['平均成绩'] = avg_watch_time_by_dimension['平均成绩'].fillna(0)
-            avg_watch_time_by_dimension['及格人数'] = avg_watch_time_by_dimension['及格人数'].fillna(0)
-
-            # 计算及格率：及格率 = 及格人数 / 总人数
-            avg_watch_time_by_dimension['及格率'] = (avg_watch_time_by_dimension['及格人数'] / avg_watch_time_by_dimension['总人次']) * 100
-
-            # 处理“及格率”列中的空值情况
-            avg_watch_time_by_dimension['及格率'] = avg_watch_time_by_dimension['及格率'].fillna(0)
+            # 处理计算结果中的NaN值
+            stats_by_dimension['平均成绩'] = stats_by_dimension['平均成绩'].fillna(0)
+            stats_by_dimension['及格人数'] = stats_by_dimension['及格人数'].fillna(0)
+            stats_by_dimension['实考人次'] = stats_by_dimension['实考人次'].fillna(0)
+            stats_by_dimension['缺考人数'] = stats_by_dimension['缺考人数'].fillna(0)
+            stats_by_dimension['缺考名单'] = stats_by_dimension['缺考名单'].fillna('')
+            stats_by_dimension['最高分'] = stats_by_dimension['最高分'].fillna(0)
+            stats_by_dimension['最低分'] = stats_by_dimension['最低分'].fillna(0)
 
             # 用户选择排序依据：按“及格率”或“平均成绩”
             sort_by = st.radio("选择排序依据", ('及格率', '平均成绩'), index=0)  # 默认按“及格率”排序
             ascending = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
 
+            # 计算及格率：及格率 = 及格人数 / 实考人次
+            stats_by_dimension['及格率'] = (stats_by_dimension['及格人数'] / stats_by_dimension['实考人次']) * 100
+            stats_by_dimension['及格率'] = stats_by_dimension['及格率'].fillna(0)
+
             # 对数据按选择的列进行排序
-            avg_watch_time_by_dimension_sorted = avg_watch_time_by_dimension.sort_values(by=sort_by, ascending=(ascending == '升序'))
+            stats_by_dimension_sorted = stats_by_dimension.sort_values(by=sort_by, ascending=(ascending == '升序'))
 
             # 创建柱形图并排序
             st.subheader(f"按 {selected_dimension} 维度分析")
 
             # 创建柱形图，X轴为选定的排序列，Y轴为选择的维度
-            bar_chart = alt.Chart(avg_watch_time_by_dimension_sorted).mark_bar().encode(
+            bar_chart = alt.Chart(stats_by_dimension_sorted).mark_bar().encode(
                 x=alt.X(sort_by, sort='-x' if ascending == '降序' else 'x'),  # 根据选择的排序列
                 y=alt.Y(selected_dimension, sort='-x' if ascending == '降序' else 'x'),  # Y轴为维度列，按选定排序列排序
-                tooltip=[selected_dimension, '总人次', '平均成绩', '及格率']
+                tooltip=[selected_dimension, '总人次', '平均成绩', '及格率', '实考人次', '缺考人数', '最高分', '最低分']
             ).properties(
                 title=f"{selected_dimension} 的成绩及及格率分析"
             )
@@ -100,13 +107,18 @@ if os.path.exists(selected_file):
             # 构建每个维度的信息表格
             table_data = []
 
-            for index, row in avg_watch_time_by_dimension_sorted.iterrows():
+            for index, row in stats_by_dimension_sorted.iterrows():
                 # 将每个维度的信息添加到表格数据
                 table_row = {selected_dimension: row[selected_dimension]}
                 table_row.update({
                     "总人次": row['总人次'],
                     "平均成绩": f"{row['平均成绩']:.2f}",  # 显示平均成绩，带两位小数
-                    "及格率": f"{row['及格率']:.2f}%"  # 显示及格率，带两位小数并加上百分号
+                    "及格率": f"{row['及格率']:.2f}%",  # 显示及格率，带两位小数并加上百分号
+                    "实考人次": row['实考人次'],
+                    "缺考人数": row['缺考人数'],
+                    "缺考名单": row['缺考名单'],
+                    "最高分": row['最高分'],
+                    "最低分": row['最低分']
                 })
                 table_data.append(table_row)
 
