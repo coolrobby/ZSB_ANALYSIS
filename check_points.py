@@ -3,17 +3,14 @@ import streamlit as st
 import os
 
 # 设置页面标题
-st.title("任务点完成详情")
+st.title("任务点完成详情4")
 
-# 自动读取当前目录下所有的xlsx文件
-file_list = [f for f in os.listdir() if f.endswith('.xlsx')]
+# 文件上传功能
+uploaded_file = st.file_uploader("上传 Excel 文件", type=["xlsx"])
 
-if file_list:
-    # 确保文件名为出勤.xlsx
-    selected_file = '任务点完成详情.xlsx' 
-    
+if uploaded_file is not None:
     # 读取数据
-    df = pd.read_excel(selected_file)
+    df = pd.read_excel(uploaded_file)
 
     # 清理列名，去除可能的空格
     df.columns = df.columns.str.strip()
@@ -84,6 +81,8 @@ if file_list:
 
             # 显示合并后的柱形图，按照完成率排序
             st.subheader(f"按 {selected_dimension} 维度分析")
+
+            # 确保柱形图和表格数据一致
             st.bar_chart(attendance_by_dimension_sorted.set_index(selected_dimension)['完成率'])
 
             # 构建每个维度的信息表格
@@ -115,4 +114,4 @@ if file_list:
             # 显示表格，按完成率排序
             st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=ascending))
 else:
-    st.error("当前目录下没有找到任何xlsx文件。")
+    st.error("请上传一个xlsx文件。")
