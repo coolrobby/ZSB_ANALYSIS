@@ -4,7 +4,7 @@ import altair as alt
 import os
 
 # 设置页面标题
-st.title("任务点完成详情12")
+st.title("任务点完成详情13")
 
 # 读取当前目录下的任务点完成详情.xlsx文件
 selected_file = '任务点完成详情.xlsx'
@@ -124,8 +124,8 @@ if os.path.exists(selected_file):
                 })
                 table_data.append(table_row)
 
-            # 显示表格，按完成率排序
-            st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=ascending))
+            # 显示表格，按照柱形图排序顺序显示
+            st.table(pd.DataFrame(table_data).set_index(selected_dimension).sort_values(by='完成率', ascending=ascending))
 
 else:
     st.error("当前目录下没有找到'任务点完成详情.xlsx'文件。")
