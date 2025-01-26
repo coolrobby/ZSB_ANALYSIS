@@ -25,7 +25,7 @@ if file_list:
     df['时间'] = df['时间'].fillna(pd.to_datetime('2000-01-01'))
 
     # 将签到状态“已签”和“教师代签”视为出勤，其他为缺勤
-    df['出勤状态'] = df['签到状态'].apply(lambda x: '出勤' if x in ['已签', '教师代签'] else '缺勤')
+    df['完成情况'] = df['详情'].apply(lambda x: '已完成' if x in ['已完成'] else '未完成')
 
     # 只考虑不是2000-01-01的时间
     df_filtered = df[df['时间'] != pd.to_datetime('2000-01-01')]
@@ -68,48 +68,48 @@ if file_list:
             # 按选定维度进行合并统计：计算总人数、出勤人数和缺勤人数
             attendance_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人数=('姓名', 'size'),
-                出勤人数=('出勤状态', lambda x: (x == '出勤').sum()),
-                缺勤人数=('出勤状态', lambda x: (x == '缺勤').sum())
+                已完成人数=('完成情况', lambda x: (x == '已完成').sum()),
+                未完成人数=('完成情况', lambda x: (x == '未来完成').sum())
             ).reset_index()
 
-            # 计算出勤率
-            attendance_by_dimension['出勤率'] = (attendance_by_dimension['出勤人数'] / attendance_by_dimension['总人数']) * 100
+            # 计算完成率
+            attendance_by_dimension['完成率'] = (attendance_by_dimension['完成人数'] / attendance_by_dimension['总人数']) * 100
 
-            # 创建一个新的列，确保出勤率为 100% 的数据排在前面
-            attendance_by_dimension['排序出勤率'] = attendance_by_dimension['出勤率'].apply(lambda x: -1 if x == 100 else x)
+            # 创建一个新的列，确保完成率为 100% 的数据排在前面
+            attendance_by_dimension['排序完成率'] = attendance_by_dimension['完成率'].apply(lambda x: -1 if x == 100 else x)
 
-            # 对数据按出勤率降序排列
-            attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序出勤率', '出勤率'], ascending=[True, False])
+            # 对数据按完成率降序排列
+            attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, False])
 
-            # 显示合并后的柱形图，按照出勤率降序排序
+            # 显示合并后的柱形图，按照完成率降序排序
             st.subheader(f"按 {selected_dimension} 维度分析")
-            st.bar_chart(attendance_by_dimension_sorted.set_index(selected_dimension)['出勤率'])
+            st.bar_chart(attendance_by_dimension_sorted.set_index(selected_dimension)['完成率'])
 
             # 构建每个维度的信息表格
             table_data = []
 
             for index, row in attendance_by_dimension_sorted.iterrows():
-                # 查找缺勤学生
+                # 查找未完成学生
                 absent_students = df_filtered[
                     (df_filtered[selected_dimension] == row[selected_dimension]) & 
-                    (df_filtered['出勤状态'] == '缺勤')
+                    (df_filtered['完成情况'] == '未完成')
                 ]
 
                 absent_names = absent_students['姓名'].tolist()
-                absent_names_str = ", ".join(absent_names) if absent_names else "没有缺勤学生"
+                absent_names_str = ", ".join(absent_names) if absent_names else "所有学生都已经完成任务"
 
                 # 将每个维度的信息添加到表格数据
                 table_row = {selected_dimension: row[selected_dimension]}
                 table_row.update({
                     "总人数": row['总人数'],
-                    "出勤人数": row['出勤人数'],
-                    "出勤率": f"{row['出勤率']:.2f}%",
-                    "缺勤人数": row['缺勤人数'],
-                    "缺勤学生": absent_names_str
+                    "已完成人数": row['已完成人数'],
+                    "完成率": f"{row['完成率']:.2f}%",
+                    "未完成人数": row['未完成人数'],
+                    "未完成学生": absent_names_str
                 })
                 table_data.append(table_row)
 
             # 显示表格，按出勤率降序排列
-            st.table(pd.DataFrame(table_data).sort_values(by='出勤率', ascending=False))
+            st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=False))
 else:
     st.error("当前目录下没有找到任何xlsx文件。")
