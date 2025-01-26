@@ -3,7 +3,7 @@ import streamlit as st
 import os
 
 # 设置页面标题
-st.title("任务点完成详情5")
+st.title("任务点完成详情6")
 
 # 确保文件名为任务点完成详情.xlsx
 selected_file = '任务点完成详情.xlsx'
@@ -83,7 +83,7 @@ if os.path.exists(selected_file):
             # 显示合并后的柱形图，按照完成率排序
             st.subheader(f"按 {selected_dimension} 维度分析")
 
-            # 确保柱形图和表格数据一致
+            # 调整柱形图显示：X轴为完成率，Y轴为选择的维度
             st.bar_chart(attendance_by_dimension_sorted.set_index(selected_dimension)['完成率'])
 
             # 构建每个维度的信息表格
