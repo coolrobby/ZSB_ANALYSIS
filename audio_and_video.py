@@ -20,11 +20,11 @@ if os.path.exists(selected_file):
     # 处理缺失值：将空字符串替换为 NaN
     df.replace('', pd.NA, inplace=True)
 
-    # 获取所有可用的任务点
-    available_dates = df['任务点'].unique()
+    # 获取所有可用的视频
+    available_dates = df['视频'].unique()
     
-    # 用户选择的任务点
-    selected_dates = st.multiselect("选择查看的任务点", available_dates, default=available_dates)
+    # 用户选择的视频
+    selected_dates = st.multiselect("选择查看的视频", available_dates, default=available_dates)
 
     # 获取所有可用的课程
     available_courses = df['课程'].unique()
@@ -33,8 +33,8 @@ if os.path.exists(selected_file):
     selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
 
     if selected_dates:
-        # 过滤选择的任务点数据
-        df_filtered = df[df['任务点'].isin(selected_dates)]
+        # 过滤选择的视频数据
+        df_filtered = df[df['视频'].isin(selected_dates)]
 
         # 如果用户选择了课程，则过滤课程
         if selected_courses:
