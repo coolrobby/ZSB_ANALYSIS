@@ -115,7 +115,7 @@ if os.path.exists(selected_file):
                 table_row.update({
                     "总人数": row['总人数'],
                     "已完成人数": row['已完成人数'],
-                    "完成率": f"{int(row['完成率'])}",  # 只显示数字部分
+                    "完成率(%)": f"{int(row['完成率'])}",  # 只显示数字部分
                     "未完成人数": row['未完成人数'],
                     "未完成学生": absent_names_str if show_absent_students else ""
                 })
