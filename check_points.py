@@ -61,15 +61,15 @@ if os.path.exists(selected_file):
             # 动态分组，按用户选择的维度进行分组
             groupby_columns = [selected_dimension]
 
-            # 按选定维度进行合并统计：计算总人数、出勤人数和缺勤人数
+            # 按选定维度进行合并统计：计算总人次、出勤人次和缺勤人次
             attendance_by_dimension = df_filtered.groupby(groupby_columns).agg(
-                总人数=('姓名', 'size'),
-                已完成人数=('完成情况', lambda x: (x == '已完成').sum()),
-                未完成人数=('完成情况', lambda x: (x == '未完成').sum())
+                总人次=('姓名', 'size'),
+                已完成人次=('完成情况', lambda x: (x == '已完成').sum()),
+                未完成人次=('完成情况', lambda x: (x == '未完成').sum())
             ).reset_index()
 
             # 计算完成率，去掉百分号，只显示数字
-            attendance_by_dimension['完成率'] = (attendance_by_dimension['已完成人数'] / attendance_by_dimension['总人数']) * 100
+            attendance_by_dimension['完成率'] = (attendance_by_dimension['已完成人次'] / attendance_by_dimension['总人次']) * 100
 
             # 创建一个新的列，确保完成率为 100% 的数据排在前面
             attendance_by_dimension['排序完成率'] = attendance_by_dimension['完成率'].apply(lambda x: -1 if x == 100 else x)
@@ -88,7 +88,7 @@ if os.path.exists(selected_file):
             bar_chart = alt.Chart(attendance_by_dimension_sorted).mark_bar().encode(
                 x=alt.X('完成率', sort='-x' if not ascending else 'x'),  # 确保根据升降序选择排序
                 y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),  # Y轴为维度列，按完成率排序
-                tooltip=[selected_dimension, '总人数', '已完成人数', '未完成人数', '完成率']
+                tooltip=[selected_dimension, '总人次', '已完成人次', '未完成人次', '完成率']
             ).properties(
                 title=f"{selected_dimension} 的任务完成情况"
             )
@@ -113,10 +113,10 @@ if os.path.exists(selected_file):
                 # 将每个维度的信息添加到表格数据
                 table_row = {selected_dimension: row[selected_dimension]}
                 table_row.update({
-                    "总人数": row['总人数'],
-                    "已完成人数": row['已完成人数'],
+                    "总人次": row['总人次'],
+                    "已完成人次": row['已完成人次'],
                     "完成率": f"{int(row['完成率'])}",  # 只显示数字部分
-                    "未完成人数": row['未完成人数'],
+                    "未完成人次": row['未完成人次'],
                     "未完成学生": absent_names_str if show_absent_students else ""
                 })
                 table_data.append(table_row)
