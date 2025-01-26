@@ -92,8 +92,11 @@ if os.path.exists(selected_file):
                 分数段人数=('姓名', 'size')
             ).unstack(fill_value=0)  # 将分数段人数转为列，并填充缺失值为0
 
-            # 合并分数段统计到原统计结果
-            stats_by_dimension = stats_by_dimension.join(score_segment_stats, on=selected_dimension)
+            # 重新设置列名
+            score_segment_stats.columns = score_segment_stats.columns.droplevel()
+
+            # 使用 merge 替代 join，确保列的匹配
+            stats_by_dimension = pd.merge(stats_by_dimension, score_segment_stats, on=selected_dimension, how='left')
 
             # 默认按“平均成绩”排序
             ascending = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
