@@ -22,7 +22,7 @@ if file_list:
     df.replace('', pd.NA, inplace=True)
 
     # 用默认日期填充空值（2000年1月1日），可以防止 NaT 错误
-    df['时间'] = df['时间'].fillna(pd.to_datetime('2000-01-01'))
+    df['任务点'] = df['任务点'].fillna(pd.to_datetime('2000-01-01'))
 
     # 将签到状态“已签”和“教师代签”视为出勤，其他为缺勤
     df['完成情况'] = df['详情'].apply(lambda x: '已完成' if x in ['已完成'] else '未完成')
@@ -44,7 +44,7 @@ if file_list:
 
     if selected_dates:
         # 过滤选择的日期数据并合并数据
-        df_filtered = df_filtered[df_filtered['时间'].isin(selected_dates)]
+        df_filtered = df_filtered[df_filtered['任务点'].isin(selected_dates)]
 
         # 如果用户选择了课程，则过滤课程
         if selected_courses:
