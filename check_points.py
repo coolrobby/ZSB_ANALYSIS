@@ -3,7 +3,7 @@ import streamlit as st
 import os
 
 # 设置页面标题
-st.title("任务点完成详情3")
+st.title("任务点完成详情")
 
 # 自动读取当前目录下所有的xlsx文件
 file_list = [f for f in os.listdir() if f.endswith('.xlsx')]
@@ -55,6 +55,9 @@ if file_list:
         # 用户选择的维度
         selected_dimension = st.selectbox("选择分析的维度", available_dimensions, index=1)  # 默认选择“院系”
 
+        # 用户选择排序方式
+        sort_order = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认选择降序
+
         if selected_dimension:
             # 动态分组，按用户选择的维度进行分组
             groupby_columns = [selected_dimension]
@@ -72,10 +75,13 @@ if file_list:
             # 创建一个新的列，确保完成率为 100% 的数据排在前面
             attendance_by_dimension['排序完成率'] = attendance_by_dimension['完成率'].apply(lambda x: -1 if x == 100 else x)
 
-            # 对数据按完成率降序排列
-            attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, False])
+            # 根据用户选择的排序方式，调整排序顺序
+            if sort_order == '降序':
+                attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, False])
+            else:
+                attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, True])
 
-            # 显示合并后的柱形图，按照完成率降序排序
+            # 显示合并后的柱形图，按照完成率排序
             st.subheader(f"按 {selected_dimension} 维度分析")
             st.bar_chart(attendance_by_dimension_sorted.set_index(selected_dimension)['完成率'])
 
@@ -103,7 +109,7 @@ if file_list:
                 })
                 table_data.append(table_row)
 
-            # 显示表格，按完成率降序排列
-            st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=False))
+            # 显示表格，按完成率排序
+            st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=(sort_order == '升序')))
 else:
     st.error("当前目录下没有找到任何xlsx文件。")
