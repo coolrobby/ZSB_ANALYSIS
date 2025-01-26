@@ -21,10 +21,10 @@ if os.path.exists(selected_file):
     df.replace('', pd.NA, inplace=True)
 
     # 获取所有可用的任务点
-    available_dates = df['任务点'].unique()
+    available_dates = df['视频'].unique()
     
     # 用户选择的任务点
-    selected_dates = st.multiselect("选择查看的任务点", available_dates, default=available_dates)
+    selected_dates = st.multiselect("选择查看的视频", available_dates, default=available_dates)
 
     # 获取所有可用的课程
     available_courses = df['课程'].unique()
@@ -32,12 +32,12 @@ if os.path.exists(selected_file):
     # 用户选择的课程
     selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
     
-    # 选项：是否显示“未完成学生”
-    show_absent_students = st.checkbox("显示未完成学生", value=False)
+    # 选项：是否显示“未观看学生”
+    show_absent_students = st.checkbox("显示未观看学生", value=False)
 
     if selected_dates:
         # 过滤选择的任务点数据
-        df_filtered = df[df['任务点'].isin(selected_dates)]
+        df_filtered = df[df['视频'].isin(selected_dates)]
 
         # 如果用户选择了课程，则过滤课程
         if selected_courses:
