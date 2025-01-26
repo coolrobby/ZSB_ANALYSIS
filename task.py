@@ -4,7 +4,7 @@ import altair as alt
 import os
 
 # 设置页面标题
-st.title("作业统计")
+st.title("作业统计2")
 
 # 读取当前目录下的作业统计.xlsx文件
 selected_file = '作业统计.xlsx'
@@ -59,32 +59,15 @@ if os.path.exists(selected_file):
             groupby_columns = [selected_dimension]
 
             # 按选定维度进行合并统计：计算成绩的平均值、及格人数、缺考人数等
-            def count_score_ranges(x):
-                scores = pd.to_numeric(x[x!= '缺考'], errors='coerce')
-                score_ranges = {
-                    '0-9分': (scores >= 0) & (scores < 10),
-                    '10-19分': (scores >= 10) & (scores < 20),
-                    '20-29分': (scores >= 20) & (scores < 30),
-                    '30-39分': (scores >= 30) & (scores < 40),
-                    '40-49分': (scores >= 40) & (scores < 50),
-                    '50-59分': (scores >= 50) & (scores < 60),
-                    '60-69分': (scores >= 60) & (scores < 70),
-                    '70-79分': (scores >= 70) & (scores < 80),
-                    '80-89分': (scores >= 80) & (scores < 90),
-                    '90-100分': (scores >= 90) & (scores <= 100)
-                }
-                return {k: v.sum() for k, v in score_ranges.items()}
-
             stats_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人次=('姓名', 'size'),
-                平均成绩=('成绩', lambda x: pd.to_numeric(x[x!= '缺考'], errors='coerce').mean()),  # 计算平均成绩，排除缺考
-                及格人数=('成绩', lambda x: (pd.to_numeric(x[x!= '缺考'], errors='coerce') >= 60).sum()),  # 计算及格人数，排除缺考
-                实考人次=('成绩', lambda x: (x!= '缺考').sum()),  # 计算有成绩的人数
+                平均成绩=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').mean()),  # 计算平均成绩，排除缺考
+                及格人数=('成绩', lambda x: (pd.to_numeric(x[x != '缺考'], errors='coerce') >= 60).sum()),  # 计算及格人数，排除缺考
+                实考人次=('成绩', lambda x: (x != '缺考').sum()),  # 计算有成绩的人数
                 缺考人数=('成绩', lambda x: (x == '缺考').sum()),  # 计算缺考人数
                 缺考名单=('姓名', lambda x: ", ".join(x[df['成绩'] == '缺考'])),  # 计算缺考名单
-                最高分=('成绩', lambda x: pd.to_numeric(x[x!= '缺考'], errors='coerce').max()),  # 计算最高分，排除缺考
-                最低分=('成绩', lambda x: pd.to_numeric(x[x!= '缺考'], errors='coerce').min()),  # 计算最低分，排除缺考
-                **count_score_ranges('成绩')
+                最高分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').max()),  # 计算最高分，排除缺考
+                最低分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').min())  # 计算最低分，排除缺考
             ).reset_index()
 
             # 处理计算结果中的NaN值
@@ -96,8 +79,20 @@ if os.path.exists(selected_file):
             stats_by_dimension['最高分'] = stats_by_dimension['最高分'].fillna(0)
             stats_by_dimension['最低分'] = stats_by_dimension['最低分'].fillna(0)
 
-            for score_range in ['0-9分', '10-19分', '20-29分', '30-39分', '40-49分', '50-59分', '60-69分', '70-79分', '80-89分', '90-100分']:
-                stats_by_dimension[score_range] = stats_by_dimension[score_range].fillna(0)
+            # 生成分数段统计（每10分为一个段）
+            df_filtered['成绩'] = pd.to_numeric(df_filtered['成绩'], errors='coerce')
+            bins = range(0, 101, 10)  # 0-100分，每10分一个区间
+            labels = [f"{i}-{i+9}" for i in bins[:-1]]
+            df_filtered['分数段'] = pd.cut(df_filtered['成绩'], bins=bins, labels=labels, right=False)
+
+            # 分数段统计
+            score_range_stats = df_filtered.groupby(['作业', selected_dimension, '分数段']).agg(
+                人数=('姓名', 'size')
+            ).reset_index()
+
+            # 显示分数段统计
+            st.subheader(f"按分数段统计（每10分为一个段）")
+            st.table(score_range_stats)
 
             # 默认按“平均成绩”排序
             ascending = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
@@ -112,7 +107,7 @@ if os.path.exists(selected_file):
             bar_chart = alt.Chart(stats_by_dimension_sorted).mark_bar().encode(
                 x=alt.X('平均成绩', sort='-x' if ascending == '降序' else 'x'),  # 确保根据升降序选择排序
                 y=alt.Y(selected_dimension, sort='-x' if ascending == '降序' else 'x'),  # Y轴为维度列，按平均成绩排序
-                tooltip=[selected_dimension, '总人次', '平均成绩', '及格人数', '实考人次', '缺考人数', '最高分', '最低分', '0-9分', '10-19分', '20-29分', '30-39分', '40-49分', '50-59分', '60-69分', '70-79分', '80-89分', '90-100分']
+                tooltip=[selected_dimension, '总人次', '平均成绩', '及格人数', '实考人次', '缺考人数', '最高分', '最低分']
             ).properties(
                 title=f"{selected_dimension} 的成绩分析"
             )
@@ -133,17 +128,7 @@ if os.path.exists(selected_file):
                     "缺考人数": row['缺考人数'],
                     "缺考名单": row['缺考名单'],
                     "最高分": row['最高分'],
-                    "最低分": row['最低分'],
-                    "0-9分": row['0-9分'],
-                    "10-19分": row['10-19分'],
-                    "20-29分": row['20-29分'],
-                    "30-39分": row['30-39分'],
-                    "40-49分": row['40-49分'],
-                    "50-59分": row['50-59分'],
-                    "60-69分": row['60-69分'],
-                    "70-79分": row['70-79分'],
-                    "80-89分": row['80-89分'],
-                    "90-100分": row['90-100分']
+                    "最低分": row['最低分']
                 })
                 table_data.append(table_row)
 
