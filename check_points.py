@@ -4,7 +4,7 @@ import altair as alt
 import os
 
 # 设置页面标题
-st.title("任务点完成详情7")
+st.title("任务点完成详情8")
 
 # 读取当前目录下的任务点完成详情.xlsx文件
 selected_file = '任务点完成详情.xlsx'
@@ -86,8 +86,8 @@ if os.path.exists(selected_file):
 
             # 创建柱形图，X轴为完成率，Y轴为选择的维度
             bar_chart = alt.Chart(attendance_by_dimension_sorted).mark_bar().encode(
-                x=alt.X('完成率', sort='-x'),  # 确保按完成率降序排序
-                y=alt.Y(selected_dimension, sort='-x'),  # Y轴为维度列，按完成率排序
+                x=alt.X('完成率', sort='-x' if not ascending else 'x'),  # 确保根据升降序选择排序
+                y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),  # Y轴为维度列，按完成率排序
                 tooltip=[selected_dimension, '总人数', '已完成人数', '未完成人数', '完成率']
             ).properties(
                 title=f"{selected_dimension} 的任务完成情况"
