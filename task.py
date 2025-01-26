@@ -4,7 +4,7 @@ import altair as alt
 import os
 
 # 设置页面标题
-st.title("作业统计2")
+st.title("作业统计3")
 
 # 读取当前目录下的作业统计.xlsx文件
 selected_file = '作业统计.xlsx'
