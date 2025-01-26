@@ -4,7 +4,7 @@ import altair as alt
 import os
 
 # 设置页面标题
-st.title("任务点完成详情14")
+st.title("任务点完成详情")
 
 # 读取当前目录下的任务点完成详情.xlsx文件
 selected_file = '任务点完成详情.xlsx'
