@@ -28,7 +28,7 @@ if file_list:
     df['完成情况'] = df['详情'].apply(lambda x: '已完成' if x in ['已完成'] else '未完成')
 
     # 只考虑不是2000-01-01的时间
-    df_filtered = df[df['时间'] != pd.to_datetime('2000-01-01')]
+    df_filtered = df[df['任务点'] != pd.to_datetime('无')]
 
     # 获取所有可用的任务点
     available_dates = df_filtered['任务点'].unique()
