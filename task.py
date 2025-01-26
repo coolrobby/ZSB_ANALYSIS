@@ -79,6 +79,19 @@ if os.path.exists(selected_file):
             stats_by_dimension['最高分'] = stats_by_dimension['最高分'].fillna(0)
             stats_by_dimension['最低分'] = stats_by_dimension['最低分'].fillna(0)
 
+            # 计算每个分数段的人数
+            def get_score_range(row):
+                if pd.isna(row['最低分']):
+                    return [0]*10  # 如果最低分为空，则返回空段
+                score_counts = [0] * 10
+                for score in pd.to_numeric(df_filtered['成绩'], errors='coerce'):
+                    if pd.notna(score) and score != '缺考':
+                        score_index = min(9, int(score // 10))  # 每10分一个分数段
+                        score_counts[score_index] += 1
+                return score_counts
+
+            stats_by_dimension['分数段统计'] = stats_by_dimension.apply(get_score_range, axis=1)
+
             # 默认按“平均成绩”排序
             ascending = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
 
@@ -113,8 +126,11 @@ if os.path.exists(selected_file):
                     "缺考人数": row['缺考人数'],
                     "缺考名单": row['缺考名单'],
                     "最高分": row['最高分'],
-                    "最低分": row['最低分']
+                    "最低分": row['最低分'],
                 })
+                # 添加分数段统计
+                for i in range(10):
+                    table_row[f"分数段{10*i}-{10*(i+1)-1}"] = row['分数段统计'][i]
                 table_data.append(table_row)
 
             # 显示表格，按照平均成绩排序
