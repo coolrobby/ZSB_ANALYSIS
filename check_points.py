@@ -30,11 +30,11 @@ if file_list:
     # 只考虑不是2000-01-01的时间
     df_filtered = df[df['时间'] != pd.to_datetime('2000-01-01')]
 
-    # 获取所有可用的时间（日期）
-    available_dates = df_filtered['时间'].unique()
+    # 获取所有可用的任务点
+    available_dates = df_filtered['任务点'].unique()
     
     # 用户选择的日期
-    selected_dates = st.multiselect("选择查看的日期", available_dates, default=available_dates)
+    selected_dates = st.multiselect("选择查看的任务点", available_dates, default=available_dates)
 
     # 获取所有可用的课程
     available_courses = df_filtered['课程'].unique()
