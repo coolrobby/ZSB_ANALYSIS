@@ -69,7 +69,7 @@ if file_list:
             attendance_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人数=('姓名', 'size'),
                 已完成人数=('完成情况', lambda x: (x == '已完成').sum()),
-                未完成人数=('完成情况', lambda x: (x == '未来完成').sum())
+                未完成人数=('完成情况', lambda x: (x == '未完成').sum())
             ).reset_index()
 
             # 计算完成率
