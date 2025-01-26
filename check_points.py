@@ -103,7 +103,7 @@ if file_list:
                 })
                 table_data.append(table_row)
 
-            # 显示表格，按出勤率降序排列
+            # 显示表格，按完成率降序排列
             st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=False))
 else:
     st.error("当前目录下没有找到任何xlsx文件。")
