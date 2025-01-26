@@ -21,30 +21,24 @@ if file_list:
     # 处理缺失值：将空字符串替换为 NaN
     df.replace('', pd.NA, inplace=True)
 
-    # 用默认日期填充空值（2000年1月1日），可以防止 NaT 错误
-    df['任务点'] = df['任务点'].fillna(pd.to_datetime('2000-01-01'))
-
     # 将签到状态“已签”和“教师代签”视为出勤，其他为缺勤
     df['完成情况'] = df['详情'].apply(lambda x: '已完成' if x in ['已完成'] else '未完成')
 
-    # 只考虑不是2000-01-01的时间
-    df_filtered = df[df['任务点'] != pd.to_datetime('无')]
-
     # 获取所有可用的任务点
-    available_dates = df_filtered['任务点'].unique()
+    available_dates = df['任务点'].unique()
     
-    # 用户选择的日期
+    # 用户选择的任务点
     selected_dates = st.multiselect("选择查看的任务点", available_dates, default=available_dates)
 
     # 获取所有可用的课程
-    available_courses = df_filtered['课程'].unique()
+    available_courses = df['课程'].unique()
     
     # 用户选择的课程
     selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
 
     if selected_dates:
-        # 过滤选择的日期数据并合并数据
-        df_filtered = df_filtered[df_filtered['任务点'].isin(selected_dates)]
+        # 过滤选择的任务点数据
+        df_filtered = df[df['任务点'].isin(selected_dates)]
 
         # 如果用户选择了课程，则过滤课程
         if selected_courses:
