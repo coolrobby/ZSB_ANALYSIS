@@ -21,23 +21,20 @@ if os.path.exists(selected_file):
     df.replace('', pd.NA, inplace=True)
 
     # 获取所有可用的任务点
-    available_dates = df['视频'].unique()
+    available_dates = df['任务点'].unique()
     
     # 用户选择的任务点
-    selected_dates = st.multiselect("选择查看的视频", available_dates, default=available_dates)
+    selected_dates = st.multiselect("选择查看的任务点", available_dates, default=available_dates)
 
     # 获取所有可用的课程
     available_courses = df['课程'].unique()
     
     # 用户选择的课程
     selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
-    
-    # 选项：是否显示“未观看学生”
-    show_absent_students = st.checkbox("显示未观看学生", value=False)
 
     if selected_dates:
         # 过滤选择的任务点数据
-        df_filtered = df[df['视频'].isin(selected_dates)]
+        df_filtered = df[df['任务点'].isin(selected_dates)]
 
         # 如果用户选择了课程，则过滤课程
         if selected_courses:
@@ -95,23 +92,11 @@ if os.path.exists(selected_file):
             table_data = []
 
             for index, row in avg_watch_time_by_dimension_sorted.iterrows():
-                # 查找未完成学生
-                absent_names_str = ""
-                if show_absent_students:
-                    absent_students = df_filtered[ 
-                        (df_filtered[selected_dimension] == row[selected_dimension]) & 
-                        (df_filtered['完成情况'] == '未完成')
-                    ]
-
-                    absent_names = absent_students['姓名'].tolist()
-                    absent_names_str = ", ".join(absent_names) if absent_names else "所有学生都已经完成任务"
-
                 # 将每个维度的信息添加到表格数据
                 table_row = {selected_dimension: row[selected_dimension]}
                 table_row.update({
                     "总人次": row['总人次'],
                     "平均观看时长": f"{row['平均观看时长']:.2f}",  # 显示平均观看时长，带两位小数
-                    "未完成学生": absent_names_str if show_absent_students else ""
                 })
                 table_data.append(table_row)
 
