@@ -71,18 +71,18 @@ if os.path.exists(selected_file):
             # 计算完成率，去掉百分号，只显示数字
             attendance_by_dimension['完成率'] = (attendance_by_dimension['已完成人次'] / attendance_by_dimension['总人次']) * 100
 
-            # 确保完成率是数值格式
+            # 确保完成率是数值格式，并且去除无效值
             attendance_by_dimension['完成率'] = pd.to_numeric(attendance_by_dimension['完成率'], errors='coerce')
 
-            # 创建一个新的列，确保完成率为 100% 的数据排在前面
-            attendance_by_dimension['排序完成率'] = attendance_by_dimension['完成率'].apply(lambda x: -1 if x == 100 else x)
+            # 处理NaN和无效值，将它们设为0或者其他默认值
+            attendance_by_dimension['完成率'] = attendance_by_dimension['完成率'].fillna(0)
 
             # 对数据按完成率降序或升序排列
             sort_order = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
             ascending = False if sort_order == '降序' else True
 
             # 对数据按完成率排序
-            attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, ascending])
+            attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by='完成率', ascending=ascending)
 
             # 创建柱形图并排序
             st.subheader(f"按 {selected_dimension} 维度分析")
@@ -105,7 +105,7 @@ if os.path.exists(selected_file):
                 # 查找未完成学生
                 absent_names_str = ""
                 if show_absent_students:
-                    absent_students = df_filtered[
+                    absent_students = df_filtered[ 
                         (df_filtered[selected_dimension] == row[selected_dimension]) & 
                         (df_filtered['完成情况'] == '未完成')
                     ]
@@ -126,5 +126,6 @@ if os.path.exists(selected_file):
 
             # 显示表格，按完成率排序
             st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=ascending))
+
 else:
     st.error("当前目录下没有找到'任务点完成详情.xlsx'文件。")
