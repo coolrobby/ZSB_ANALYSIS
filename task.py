@@ -62,15 +62,18 @@ if os.path.exists(selected_file):
                 及格人数=('成绩', lambda x: (x >= 60).sum())  # 计算及格人数，假设60分及格
             ).reset_index()
 
-            # 计算及格率
-            avg_watch_time_by_dimension['及格率'] = (avg_watch_time_by_dimension['及格人数'] / avg_watch_time_by_dimension['总人次']) * 100
-
-            # 确保成绩是数值格式，并且去除无效值
+            # 确保计算后的“平均成绩”和“及格人数”不包含空值
             avg_watch_time_by_dimension['平均成绩'] = pd.to_numeric(avg_watch_time_by_dimension['平均成绩'], errors='coerce')
-            avg_watch_time_by_dimension['及格率'] = pd.to_numeric(avg_watch_time_by_dimension['及格率'], errors='coerce')
+            avg_watch_time_by_dimension['及格人数'] = pd.to_numeric(avg_watch_time_by_dimension['及格人数'], errors='coerce')
 
             # 处理NaN和无效值，将它们设为0或者其他默认值
             avg_watch_time_by_dimension['平均成绩'] = avg_watch_time_by_dimension['平均成绩'].fillna(0)
+            avg_watch_time_by_dimension['及格人数'] = avg_watch_time_by_dimension['及格人数'].fillna(0)
+
+            # 计算及格率：及格率 = 及格人数 / 总人数
+            avg_watch_time_by_dimension['及格率'] = (avg_watch_time_by_dimension['及格人数'] / avg_watch_time_by_dimension['总人次']) * 100
+
+            # 处理“及格率”列中的空值情况
             avg_watch_time_by_dimension['及格率'] = avg_watch_time_by_dimension['及格率'].fillna(0)
 
             # 用户选择排序依据：按“及格率”或“平均成绩”
