@@ -1,115 +1,122 @@
+import os
 import pandas as pd
 import streamlit as st
-import os
 
 # 设置页面标题
-st.title("任务点完成详情")
+st.title("任务点完成详情2")
 
 # 自动读取当前目录下所有的xlsx文件
 file_list = [f for f in os.listdir() if f.endswith('.xlsx')]
 
 if file_list:
     # 确保文件名为出勤.xlsx
-    selected_file = '任务点完成详情.xlsx' 
+    selected_file = '任务点完成详情.xlsx'
     
-    # 读取数据
-    df = pd.read_excel(selected_file)
+    # 检查文件是否存在
+    if selected_file not in file_list:
+        st.error(f"未找到文件: {selected_file}")
+    else:
+        try:
+            # 读取数据
+            df = pd.read_excel(selected_file)
 
-    # 清理列名，去除可能的空格
-    df.columns = df.columns.str.strip()
+            # 清理列名，去除可能的空格
+            df.columns = df.columns.str.strip()
 
-    # 处理缺失值：将空字符串替换为 NaN
-    df.replace('', pd.NA, inplace=True)
+            # 处理缺失值：将空字符串替换为 NaN
+            df.replace('', pd.NA, inplace=True)
 
-    # 将签到状态“已签”和“教师代签”视为出勤，其他为缺勤
-    df['完成情况'] = df['详情'].apply(lambda x: '已完成' if x in ['已完成'] else '未完成')
+            # 将签到状态“已签”和“教师代签”视为出勤，其他为缺勤
+            df['完成情况'] = df['详情'].apply(lambda x: '已完成' if x in ['已完成'] else '未完成')
 
-    # 获取所有可用的任务点
-    available_dates = df['任务点'].unique()
-    
-    # 用户选择的任务点
-    selected_dates = st.multiselect("选择查看的任务点", available_dates, default=available_dates)
+            # 获取所有可用的任务点
+            available_dates = df['任务点'].unique()
 
-    # 获取所有可用的课程
-    available_courses = df['课程'].unique()
-    
-    # 用户选择的课程
-    selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
+            # 用户选择的任务点
+            selected_dates = st.multiselect("选择查看的任务点", available_dates, default=available_dates)
 
-    if selected_dates:
-        # 过滤选择的任务点数据
-        df_filtered = df[df['任务点'].isin(selected_dates)]
+            # 获取所有可用的课程
+            available_courses = df['课程'].unique()
 
-        # 如果用户选择了课程，则过滤课程
-        if selected_courses:
-            df_filtered = df_filtered[df_filtered['课程'].isin(selected_courses)]
+            # 用户选择的课程
+            selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
 
-        # 获取所有可用的维度（列名），如果没有选择课程，就去除“课程”维度
-        available_dimensions = [
-            '学校', '院系', '专业', '行政班级', '授课班级', '教师'
-        ]
-        
-        if selected_courses:
-            available_dimensions.append('课程')  # 如果选择了课程，则显示“课程”维度
+            if selected_dates:
+                # 过滤选择的任务点数据
+                df_filtered = df[df['任务点'].isin(selected_dates)]
 
-        # 用户选择的维度
-        selected_dimension = st.selectbox("选择分析的维度", available_dimensions, index=1)  # 默认选择“院系”
+                # 如果用户选择了课程，则过滤课程
+                if selected_courses:
+                    df_filtered = df_filtered[df_filtered['课程'].isin(selected_courses)]
 
-        # 用户选择排序方式
-        sort_order = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认选择降序
-
-        if selected_dimension:
-            # 动态分组，按用户选择的维度进行分组
-            groupby_columns = [selected_dimension]
-
-            # 按选定维度进行合并统计：计算总人数、出勤人数和缺勤人数
-            attendance_by_dimension = df_filtered.groupby(groupby_columns).agg(
-                总人数=('姓名', 'size'),
-                已完成人数=('完成情况', lambda x: (x == '已完成').sum()),
-                未完成人数=('完成情况', lambda x: (x == '未完成').sum())
-            ).reset_index()
-
-            # 计算完成率
-            attendance_by_dimension['完成率'] = (attendance_by_dimension['已完成人数'] / attendance_by_dimension['总人数']) * 100
-
-            # 创建一个新的列，确保完成率为 100% 的数据排在前面
-            attendance_by_dimension['排序完成率'] = attendance_by_dimension['完成率'].apply(lambda x: -1 if x == 100 else x)
-
-            # 根据用户选择的排序方式，调整排序顺序
-            if sort_order == '降序':
-                attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, False])
-            else:
-                attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, True])
-
-            # 显示合并后的柱形图，按照完成率排序
-            st.subheader(f"按 {selected_dimension} 维度分析")
-            st.bar_chart(attendance_by_dimension_sorted.set_index(selected_dimension)['完成率'])
-
-            # 构建每个维度的信息表格
-            table_data = []
-
-            for index, row in attendance_by_dimension_sorted.iterrows():
-                # 查找未完成学生
-                absent_students = df_filtered[
-                    (df_filtered[selected_dimension] == row[selected_dimension]) & 
-                    (df_filtered['完成情况'] == '未完成')
+                # 获取所有可用的维度（列名），如果没有选择课程，就去除“课程”维度
+                available_dimensions = [
+                    '学校', '院系', '专业', '行政班级', '授课班级', '教师'
                 ]
 
-                absent_names = absent_students['姓名'].tolist()
-                absent_names_str = ", ".join(absent_names) if absent_names else "所有学生都已经完成任务"
+                if selected_courses:
+                    available_dimensions.append('课程')  # 如果选择了课程，则显示“课程”维度
 
-                # 将每个维度的信息添加到表格数据
-                table_row = {selected_dimension: row[selected_dimension]}
-                table_row.update({
-                    "总人数": row['总人数'],
-                    "已完成人数": row['已完成人数'],
-                    "完成率": f"{row['完成率']:.2f}%",
-                    "未完成人数": row['未完成人数'],
-                    "未完成学生": absent_names_str
-                })
-                table_data.append(table_row)
+                # 用户选择的维度
+                selected_dimension = st.selectbox("选择分析的维度", available_dimensions, index=1)  # 默认选择“院系”
 
-            # 显示表格，按完成率排序
-            st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=(sort_order == '升序')))
+                # 用户选择排序方式
+                sort_order = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认选择降序
+
+                if selected_dimension:
+                    # 动态分组，按用户选择的维度进行分组
+                    groupby_columns = [selected_dimension]
+
+                    # 按选定维度进行合并统计：计算总人数、出勤人数和缺勤人数
+                    attendance_by_dimension = df_filtered.groupby(groupby_columns).agg(
+                        总人数=('姓名', 'size'),
+                        已完成人数=('完成情况', lambda x: (x == '已完成').sum()),
+                        未完成人数=('完成情况', lambda x: (x == '未完成').sum())
+                    ).reset_index()
+
+                    # 计算完成率
+                    attendance_by_dimension['完成率'] = (attendance_by_dimension['已完成人数'] / attendance_by_dimension['总人数']) * 100
+
+                    # 创建一个新的列，确保完成率为 100% 的数据排在前面
+                    attendance_by_dimension['排序完成率'] = attendance_by_dimension['完成率'].apply(lambda x: -1 if x == 100 else x)
+
+                    # 根据用户选择的排序方式，调整排序顺序
+                    if sort_order == '降序':
+                        attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, False])
+                    else:
+                        attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序完成率', '完成率'], ascending=[True, True])
+
+                    # 显示合并后的柱形图，按照完成率排序
+                    st.subheader(f"按 {selected_dimension} 维度分析")
+                    st.bar_chart(attendance_by_dimension_sorted.set_index(selected_dimension)['完成率'])
+
+                    # 构建每个维度的信息表格
+                    table_data = []
+
+                    for index, row in attendance_by_dimension_sorted.iterrows():
+                        # 查找未完成学生
+                        absent_students = df_filtered[
+                            (df_filtered[selected_dimension] == row[selected_dimension]) & 
+                            (df_filtered['完成情况'] == '未完成')
+                        ]
+
+                        absent_names = absent_students['姓名'].tolist()
+                        absent_names_str = ", ".join(absent_names) if absent_names else "所有学生都已经完成任务"
+
+                        # 将每个维度的信息添加到表格数据
+                        table_row = {selected_dimension: row[selected_dimension]}
+                        table_row.update({
+                            "总人数": row['总人数'],
+                            "已完成人数": row['已完成人数'],
+                            "完成率": f"{row['完成率']:.2f}%",
+                            "未完成人数": row['未完成人数'],
+                            "未完成学生": absent_names_str
+                        })
+                        table_data.append(table_row)
+
+                    # 显示表格，按完成率排序
+                    st.table(pd.DataFrame(table_data).sort_values(by='完成率', ascending=(sort_order == '升序')))
+        except Exception as e:
+            st.error(f"读取文件时出错: {str(e)}")
 else:
     st.error("当前目录下没有找到任何xlsx文件。")
