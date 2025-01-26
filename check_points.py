@@ -34,7 +34,7 @@ if os.path.exists(selected_file):
     
     # 用户选择的课程
     selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
-
+    
     # 选项：是否显示“未完成学生”
     show_absent_students = st.checkbox("显示未完成学生", value=False)
 
