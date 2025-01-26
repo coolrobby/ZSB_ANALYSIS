@@ -59,15 +59,32 @@ if os.path.exists(selected_file):
             groupby_columns = [selected_dimension]
 
             # 按选定维度进行合并统计：计算成绩的平均值、及格人数、缺考人数等
+            def count_score_ranges(x):
+                scores = pd.to_numeric(x[x!= '缺考'], errors='coerce')
+                score_ranges = {
+                    '0-9分': (scores >= 0) & (scores < 10),
+                    '10-19分': (scores >= 10) & (scores < 20),
+                    '20-29分': (scores >= 20) & (scores < 30),
+                    '30-39分': (scores >= 30) & (scores < 40),
+                    '40-49分': (scores >= 40) & (scores < 50),
+                    '50-59分': (scores >= 50) & (scores < 60),
+                    '60-69分': (scores >= 60) & (scores < 70),
+                    '70-79分': (scores >= 70) & (scores < 80),
+                    '80-89分': (scores >= 80) & (scores < 90),
+                    '90-100分': (scores >= 90) & (scores <= 100)
+                }
+                return {k: v.sum() for k, v in score_ranges.items()}
+
             stats_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人次=('姓名', 'size'),
-                平均成绩=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').mean()),  # 计算平均成绩，排除缺考
-                及格人数=('成绩', lambda x: (pd.to_numeric(x[x != '缺考'], errors='coerce') >= 60).sum()),  # 计算及格人数，排除缺考
-                实考人次=('成绩', lambda x: (x != '缺考').sum()),  # 计算有成绩的人数
+                平均成绩=('成绩', lambda x: pd.to_numeric(x[x!= '缺考'], errors='coerce').mean()),  # 计算平均成绩，排除缺考
+                及格人数=('成绩', lambda x: (pd.to_numeric(x[x!= '缺考'], errors='coerce') >= 60).sum()),  # 计算及格人数，排除缺考
+                实考人次=('成绩', lambda x: (x!= '缺考').sum()),  # 计算有成绩的人数
                 缺考人数=('成绩', lambda x: (x == '缺考').sum()),  # 计算缺考人数
-                缺考名单=('姓名', lambda x: ", ".join(x[df_filtered['成绩'] == '缺考'])),  # 计算缺考名单
-                最高分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').max()),  # 计算最高分，排除缺考
-                最低分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').min())  # 计算最低分，排除缺考
+                缺考名单=('姓名', lambda x: ", ".join(x[df['成绩'] == '缺考'])),  # 计算缺考名单
+                最高分=('成绩', lambda x: pd.to_numeric(x[x!= '缺考'], errors='coerce').max()),  # 计算最高分，排除缺考
+                最低分=('成绩', lambda x: pd.to_numeric(x[x!= '缺考'], errors='coerce').min()),  # 计算最低分，排除缺考
+                **count_score_ranges('成绩')
             ).reset_index()
 
             # 处理计算结果中的NaN值
@@ -79,23 +96,8 @@ if os.path.exists(selected_file):
             stats_by_dimension['最高分'] = stats_by_dimension['最高分'].fillna(0)
             stats_by_dimension['最低分'] = stats_by_dimension['最低分'].fillna(0)
 
-            # 计算每个分数段的人数（只针对选定的维度）
-            def get_score_range_for_dimension(group):
-                score_counts = [0] * 10
-                for score in pd.to_numeric(group['成绩'], errors='coerce'):
-                    if pd.notna(score) and score != '缺考':
-                        score_index = min(9, int(score // 10))  # 每10分一个分数段
-                        score_counts[score_index] += 1
-                return score_counts
-
-            # 在groupby后，确保成绩列仍然在group中传递，避免KeyError
-            stats_by_dimension['分数段统计'] = stats_by_dimension.groupby(groupby_columns)['成绩'].apply(lambda group: get_score_range_for_dimension(group)).reset_index(level=0, drop=True)
-
-            # 格式化分数段显示
-            def format_score_range(range_counts):
-                return [f"{i*10}-{(i+1)*10-1}分: {count}" for i, count in enumerate(range_counts)]
-
-            stats_by_dimension['分数段统计'] = stats_by_dimension['分数段统计'].apply(format_score_range)
+            for score_range in ['0-9分', '10-19分', '20-29分', '30-39分', '40-49分', '50-59分', '60-69分', '70-79分', '80-89分', '90-100分']:
+                stats_by_dimension[score_range] = stats_by_dimension[score_range].fillna(0)
 
             # 默认按“平均成绩”排序
             ascending = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
@@ -110,7 +112,7 @@ if os.path.exists(selected_file):
             bar_chart = alt.Chart(stats_by_dimension_sorted).mark_bar().encode(
                 x=alt.X('平均成绩', sort='-x' if ascending == '降序' else 'x'),  # 确保根据升降序选择排序
                 y=alt.Y(selected_dimension, sort='-x' if ascending == '降序' else 'x'),  # Y轴为维度列，按平均成绩排序
-                tooltip=[selected_dimension, '总人次', '平均成绩', '及格人数', '实考人次', '缺考人数', '最高分', '最低分']
+                tooltip=[selected_dimension, '总人次', '平均成绩', '及格人数', '实考人次', '缺考人数', '最高分', '最低分', '0-9分', '10-19分', '20-29分', '30-39分', '40-49分', '50-59分', '60-69分', '70-79分', '80-89分', '90-100分']
             ).properties(
                 title=f"{selected_dimension} 的成绩分析"
             )
@@ -132,10 +134,17 @@ if os.path.exists(selected_file):
                     "缺考名单": row['缺考名单'],
                     "最高分": row['最高分'],
                     "最低分": row['最低分'],
+                    "0-9分": row['0-9分'],
+                    "10-19分": row['10-19分'],
+                    "20-29分": row['20-29分'],
+                    "30-39分": row['30-39分'],
+                    "40-49分": row['40-49分'],
+                    "50-59分": row['50-59分'],
+                    "60-69分": row['60-69分'],
+                    "70-79分": row['70-79分'],
+                    "80-89分": row['80-89分'],
+                    "90-100分": row['90-100分']
                 })
-                # 添加分数段统计
-                for i, range_str in enumerate(row['分数段统计']):
-                    table_row[range_str] = row['分数段统计'][i]
                 table_data.append(table_row)
 
             # 显示表格，按照平均成绩排序
