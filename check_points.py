@@ -73,7 +73,7 @@ if file_list:
             ).reset_index()
 
             # 计算完成率
-            attendance_by_dimension['完成率'] = (attendance_by_dimension['完成人数'] / attendance_by_dimension['总人数']) * 100
+            attendance_by_dimension['完成率'] = (attendance_by_dimension['已完成人数'] / attendance_by_dimension['总人数']) * 100
 
             # 创建一个新的列，确保完成率为 100% 的数据排在前面
             attendance_by_dimension['排序完成率'] = attendance_by_dimension['完成率'].apply(lambda x: -1 if x == 100 else x)
