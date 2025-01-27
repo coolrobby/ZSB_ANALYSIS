@@ -129,4 +129,18 @@ if os.path.exists(selected_file):
                     "最高分": row['最高分'],
                     "最低分": row['最低分'],
                     "分数段0_59": row['分数段0_59'],
-                    "分数段60_69": row['分数
+                    "分数段60_69": row['分数段60_69'],
+                    "分数段70_79": row['分数段70_79'],
+                    "分数段80_89": row['分数段80_89'],
+                    "分数段90_99": row['分数段90_99'],
+                    "分数段100": row['分数段100']
+                })
+                table_data.append(table_row)
+
+            # 显示表格，按照平均成绩排序
+            df_table = pd.DataFrame(table_data)
+            df_table['平均成绩'] = pd.to_numeric(df_table['平均成绩'], errors='coerce')
+            st.table(df_table.sort_values(by='平均成绩', ascending=(ascending == '升序')))
+
+else:
+    st.error("当前目录下没有找到'作业统计.xlsx'文件。")
