@@ -79,10 +79,13 @@ if file_list:
             # 计算出勤率
             attendance_by_dimension['出勤率'] = (attendance_by_dimension['出勤人次'] / attendance_by_dimension['总人次']) * 100
 
-            # 计算出勤率的排序依据：出勤率的高低
+            # 处理计算结果中的NaN值
+            attendance_by_dimension['出勤率'] = attendance_by_dimension['出勤率'].fillna(0).round(2)
+
+            # 计算排序：100%出勤率排在最前面
             attendance_by_dimension['排序出勤率'] = attendance_by_dimension['出勤率'].apply(lambda x: -1 if x == 100 else x)
 
-            # 根据出勤率降序排序
+            # 对数据按出勤率降序排列
             attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by=['排序出勤率', '出勤率'], ascending=[True, False])
 
             # 显示合并后的柱形图，按照出勤率降序排序
@@ -119,7 +122,7 @@ if file_list:
                 table_row.update({
                     "总人次": row['总人次'],
                     "出勤人次": row['出勤人次'],
-                    "出勤率": f"{row['出勤率']:.2f}%",  # 显示出勤率，带百分号
+                    "出勤率": f"{row['出勤率']:.2f}%",
                     "缺勤人次": row['缺勤人次'],
                     "缺勤学生": absent_names_str if show_absent_students else ""
                 })
