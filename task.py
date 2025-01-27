@@ -58,19 +58,16 @@ if os.path.exists(selected_file):
             # 动态分组，按用户选择的维度进行分组
             groupby_columns = [selected_dimension]
 
-            # 处理成绩，转换为数字，排除“缺考”记录
-            df_filtered['成绩'] = pd.to_numeric(df_filtered['成绩'], errors='coerce')
-
             # 按选定维度进行合并统计：计算成绩的平均值、及格人数、缺考人数等
             stats_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人次=('姓名', 'size'),
-                平均成绩=('成绩', 'mean'),
-                及格人数=('成绩', lambda x: (x >= 60).sum()),  # 计算及格人数
-                实考人次=('成绩', lambda x: (x.notna()).sum()),  # 计算有成绩的人数
-                缺考人数=('成绩', lambda x: (x.isna()).sum()),  # 计算缺考人数
-                缺考名单=('姓名', lambda x: ", ".join(x[df_filtered['成绩'].isna()])),  # 计算缺考名单
-                最高分=('成绩', 'max'),  # 计算最高分
-                最低分=('成绩', 'min')  # 计算最低分
+                平均成绩=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').mean()),  # 计算平均成绩，排除缺考
+                及格人数=('成绩', lambda x: (pd.to_numeric(x[x != '缺考'], errors='coerce') >= 60).sum()),  # 计算及格人数，排除缺考
+                实考人次=('成绩', lambda x: (x != '缺考').sum()),  # 计算有成绩的人数
+                缺考人数=('成绩', lambda x: (x == '缺考').sum()),  # 计算缺考人数
+                缺考名单=('姓名', lambda x: ", ".join(x[df['成绩'] == '缺考'])),  # 计算缺考名单
+                最高分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').max()),  # 计算最高分，排除缺考
+                最低分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').min())  # 计算最低分，排除缺考
             ).reset_index()
 
             # 处理计算结果中的NaN值
@@ -81,22 +78,6 @@ if os.path.exists(selected_file):
             stats_by_dimension['缺考名单'] = stats_by_dimension['缺考名单'].fillna('')
             stats_by_dimension['最高分'] = stats_by_dimension['最高分'].fillna(0)
             stats_by_dimension['最低分'] = stats_by_dimension['最低分'].fillna(0)
-
-            # 计算分数段统计
-            bins = [0, 59, 69, 79, 89, 100]
-            labels = ['0-59', '60-69', '70-79', '80-89', '90-100']
-            df_filtered['分数段'] = pd.cut(df_filtered['成绩'], bins=bins, labels=labels, right=True, include_lowest=True)
-
-            # 按照分数段进行统计
-            score_segment_stats = df_filtered.groupby([selected_dimension, '分数段']).agg(
-                分数段人数=('姓名', 'size')
-            ).unstack(fill_value=0)  # 将分数段人数转为列，并填充缺失值为0
-
-            # 重新设置列名
-            score_segment_stats.columns = score_segment_stats.columns.droplevel()
-
-            # 使用 merge 替代 join，确保列的匹配
-            stats_by_dimension = pd.merge(stats_by_dimension, score_segment_stats, on=selected_dimension, how='left')
 
             # 默认按“平均成绩”排序
             ascending = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
@@ -118,9 +99,28 @@ if os.path.exists(selected_file):
 
             st.altair_chart(bar_chart, use_container_width=True)
 
-            # 显示合并后的表格，包含分数段统计
-            df_table = stats_by_dimension_sorted[['总人次', '平均成绩', '及格人数', '实考人次', '缺考人数', '缺考名单', '最高分', '最低分'] + labels]
-            st.table(df_table)
+            # 构建每个维度的信息表格
+            table_data = []
+
+            for index, row in stats_by_dimension_sorted.iterrows():
+                # 将每个维度的信息添加到表格数据
+                table_row = {selected_dimension: row[selected_dimension]}
+                table_row.update({
+                    "总人次": row['总人次'],
+                    "平均成绩": f"{row['平均成绩']:.2f}",  # 显示平均成绩，带两位小数
+                    "及格人数": row['及格人数'],
+                    "实考人次": row['实考人次'],
+                    "缺考人数": row['缺考人数'],
+                    "缺考名单": row['缺考名单'],
+                    "最高分": row['最高分'],
+                    "最低分": row['最低分']
+                })
+                table_data.append(table_row)
+
+            # 显示表格，按照平均成绩排序
+            df_table = pd.DataFrame(table_data)
+            df_table['平均成绩'] = pd.to_numeric(df_table['平均成绩'], errors='coerce')
+            st.table(df_table.sort_values(by='平均成绩', ascending=(ascending == '升序')))
 
 else:
     st.error("当前目录下没有找到'作业统计.xlsx'文件。")
