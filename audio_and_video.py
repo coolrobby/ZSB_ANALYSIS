@@ -32,6 +32,9 @@ if os.path.exists(selected_file):
     # 用户选择的课程
     selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
 
+    # 选项：是否显示“未观看名单”
+    show_unwatched_list = st.checkbox("显示未观看名单", value=False)
+
     if selected_dates:
         # 过滤选择的视频数据
         df_filtered = df[df['视频'].isin(selected_dates)]
@@ -55,33 +58,39 @@ if os.path.exists(selected_file):
             # 动态分组，按用户选择的维度进行分组
             groupby_columns = [selected_dimension]
 
-            # 按选定维度进行合并统计：计算观看时长的平均值
-            avg_watch_time_by_dimension = df_filtered.groupby(groupby_columns).agg(
+            # 按选定维度进行合并统计：计算观看时长的平均值、最大值和最小值
+            watch_time_stats_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人次=('姓名', 'size'),
-                平均观看时长=('观看时长', 'mean')  # 计算平均观看时长
+                平均观看时长=('观看时长', 'mean'),
+                最高观看时长=('观看时长', 'max'),
+                最低观看时长=('观看时长', 'min')
             ).reset_index()
 
             # 确保观看时长是数值格式，并且去除无效值
-            avg_watch_time_by_dimension['平均观看时长'] = pd.to_numeric(avg_watch_time_by_dimension['平均观看时长'], errors='coerce')
+            watch_time_stats_by_dimension['平均观看时长'] = pd.to_numeric(watch_time_stats_by_dimension['平均观看时长'], errors='coerce')
+            watch_time_stats_by_dimension['最高观看时长'] = pd.to_numeric(watch_time_stats_by_dimension['最高观看时长'], errors='coerce')
+            watch_time_stats_by_dimension['最低观看时长'] = pd.to_numeric(watch_time_stats_by_dimension['最低观看时长'], errors='coerce')
 
             # 处理NaN和无效值，将它们设为0或者其他默认值
-            avg_watch_time_by_dimension['平均观看时长'] = avg_watch_time_by_dimension['平均观看时长'].fillna(0)
+            watch_time_stats_by_dimension['平均观看时长'] = watch_time_stats_by_dimension['平均观看时长'].fillna(0)
+            watch_time_stats_by_dimension['最高观看时长'] = watch_time_stats_by_dimension['最高观看时长'].fillna(0)
+            watch_time_stats_by_dimension['最低观看时长'] = watch_time_stats_by_dimension['最低观看时长'].fillna(0)
 
             # 对数据按平均观看时长降序或升序排列
             sort_order = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
             ascending = False if sort_order == '降序' else True
 
             # 对数据按平均观看时长排序
-            avg_watch_time_by_dimension_sorted = avg_watch_time_by_dimension.sort_values(by='平均观看时长', ascending=ascending)
+            watch_time_stats_by_dimension_sorted = watch_time_stats_by_dimension.sort_values(by='平均观看时长', ascending=ascending)
 
             # 创建柱形图并排序
             st.subheader(f"按 {selected_dimension} 维度分析")
 
             # 创建柱形图，X轴为平均观看时长，Y轴为选择的维度
-            bar_chart = alt.Chart(avg_watch_time_by_dimension_sorted).mark_bar().encode(
+            bar_chart = alt.Chart(watch_time_stats_by_dimension_sorted).mark_bar().encode(
                 x=alt.X('平均观看时长', sort='-x' if not ascending else 'x'),  # 确保根据升降序选择排序
                 y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),  # Y轴为维度列，按平均观看时长排序
-                tooltip=[selected_dimension, '总人次', '平均观看时长']
+                tooltip=[selected_dimension, '总人次', '平均观看时长', '最高观看时长', '最低观看时长']
             ).properties(
                 title=f"{selected_dimension} 的观看时长分析"
             )
@@ -91,12 +100,26 @@ if os.path.exists(selected_file):
             # 构建每个维度的信息表格
             table_data = []
 
-            for index, row in avg_watch_time_by_dimension_sorted.iterrows():
+            for index, row in watch_time_stats_by_dimension_sorted.iterrows():
+                # 查找未观看学生
+                unwatched_names_str = ""
+                if show_unwatched_list:
+                    unwatched_students = df_filtered[ 
+                        (df_filtered[selected_dimension] == row[selected_dimension]) & 
+                        ((df_filtered['观看时长'].isna()) | (df_filtered['观看时长'] == 0))
+                    ]
+
+                    unwatched_names = unwatched_students['姓名'].tolist()
+                    unwatched_names_str = ", ".join(unwatched_names) if unwatched_names else "没有未观看学生"
+
                 # 将每个维度的信息添加到表格数据
                 table_row = {selected_dimension: row[selected_dimension]}
                 table_row.update({
                     "总人次": row['总人次'],
                     "平均观看时长": f"{row['平均观看时长']:.2f}",  # 显示平均观看时长，带两位小数
+                    "最高观看时长": f"{row['最高观看时长']:.2f}",
+                    "最低观看时长": f"{row['最低观看时长']:.2f}",
+                    "未观看名单": unwatched_names_str if show_unwatched_list else ""
                 })
                 table_data.append(table_row)
 
