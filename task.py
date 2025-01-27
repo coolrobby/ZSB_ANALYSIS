@@ -124,7 +124,7 @@ if os.path.exists(selected_file):
                 table_row = {selected_dimension: row[selected_dimension]}
                 table_row.update({
                     "总人次": row['总人次'],
-                    "平均成绩": f"{row['平均成绩']:.0f}",  # 显示平均成绩，带0位小数
+                    "平均成绩": f"{row['平均成绩']:.2f}",  # 显示平均成绩，带0位小数
                     "及格人次": row['及格人次'],
                     "及格率": f"{row['及格率']:.2f}%",  # 显示及格率，带百分号
                     "实考人次": row['实考人次'],
