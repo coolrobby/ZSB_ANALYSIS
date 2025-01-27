@@ -67,7 +67,14 @@ if os.path.exists(selected_file):
                 缺考人数=('成绩', lambda x: (x == '缺考').sum()),  # 计算缺考人数
                 缺考名单=('姓名', lambda x: ", ".join(x[df['成绩'] == '缺考'])),  # 计算缺考名单
                 最高分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').max()),  # 计算最高分，排除缺考
-                最低分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').min())  # 计算最低分，排除缺考
+                最低分=('成绩', lambda x: pd.to_numeric(x[x != '缺考'], errors='coerce').min()),  # 计算最低分，排除缺考
+                # 计算各分数区间人数
+                0_59分人数=('成绩', lambda x: ((pd.to_numeric(x[x != '缺考'], errors='coerce') < 60).sum())),  # 0-59分人数
+                60_69分人数=('成绩', lambda x: ((pd.to_numeric(x[x != '缺考'], errors='coerce') >= 60) & (pd.to_numeric(x[x != '缺考'], errors='coerce') < 70)).sum()),  # 60-69分人数
+                70_79分人数=('成绩', lambda x: ((pd.to_numeric(x[x != '缺考'], errors='coerce') >= 70) & (pd.to_numeric(x[x != '缺考'], errors='coerce') < 80)).sum()),  # 70-79分人数
+                80_89分人数=('成绩', lambda x: ((pd.to_numeric(x[x != '缺考'], errors='coerce') >= 80) & (pd.to_numeric(x[x != '缺考'], errors='coerce') < 90)).sum()),  # 80-89分人数
+                90_99分人数=('成绩', lambda x: ((pd.to_numeric(x[x != '缺考'], errors='coerce') >= 90) & (pd.to_numeric(x[x != '缺考'], errors='coerce') < 100)).sum()),  # 90-99分人数
+                100分人数=('成绩', lambda x: (pd.to_numeric(x[x != '缺考'], errors='coerce') == 100).sum())  # 100分人数
             ).reset_index()
 
             # 处理计算结果中的NaN值
@@ -78,6 +85,12 @@ if os.path.exists(selected_file):
             stats_by_dimension['缺考名单'] = stats_by_dimension['缺考名单'].fillna('')
             stats_by_dimension['最高分'] = stats_by_dimension['最高分'].fillna(0)
             stats_by_dimension['最低分'] = stats_by_dimension['最低分'].fillna(0)
+            stats_by_dimension['0-59分人数'] = stats_by_dimension['0_59分人数'].fillna(0)
+            stats_by_dimension['60-69分人数'] = stats_by_dimension['60_69分人数'].fillna(0)
+            stats_by_dimension['70-79分人数'] = stats_by_dimension['70_79分人数'].fillna(0)
+            stats_by_dimension['80-89分人数'] = stats_by_dimension['80_89分人数'].fillna(0)
+            stats_by_dimension['90-99分人数'] = stats_by_dimension['90_99分人数'].fillna(0)
+            stats_by_dimension['100分人数'] = stats_by_dimension['100分人数'].fillna(0)
 
             # 默认按“平均成绩”排序
             ascending = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
@@ -92,7 +105,8 @@ if os.path.exists(selected_file):
             bar_chart = alt.Chart(stats_by_dimension_sorted).mark_bar().encode(
                 x=alt.X('平均成绩', sort='-x' if ascending == '降序' else 'x'),  # 确保根据升降序选择排序
                 y=alt.Y(selected_dimension, sort='-x' if ascending == '降序' else 'x'),  # Y轴为维度列，按平均成绩排序
-                tooltip=[selected_dimension, '总人次', '平均成绩', '及格人数', '实考人次', '缺考人数', '最高分', '最低分']
+                tooltip=[selected_dimension, '总人次', '平均成绩', '及格人数', '实考人次', '缺考人数', '最高分', '最低分',
+                         '0-59分人数', '60-69分人数', '70-79分人数', '80-89分人数', '90-99分人数', '100分人数']
             ).properties(
                 title=f"{selected_dimension} 的成绩分析"
             )
@@ -113,7 +127,13 @@ if os.path.exists(selected_file):
                     "缺考人数": row['缺考人数'],
                     "缺考名单": row['缺考名单'],
                     "最高分": row['最高分'],
-                    "最低分": row['最低分']
+                    "最低分": row['最低分'],
+                    "0-59分人数": row['0-59分人数'],
+                    "60-69分人数": row['60-69分人数'],
+                    "70-79分人数": row['70-79分人数'],
+                    "80-89分人数": row['80-89分人数'],
+                    "90-99分人数": row['90-99分人数'],
+                    "100分人数": row['100分人数']
                 })
                 table_data.append(table_row)
 
