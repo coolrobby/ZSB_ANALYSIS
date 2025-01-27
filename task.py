@@ -126,8 +126,8 @@ if os.path.exists(selected_file):
                     "实考人次": row['实考人次'],
                     "缺考人数": row['缺考人数'],
                     "缺考名单": row['缺考名单'],
-                    "最高分": f"{row['最高分']:.2f}",  # 显示最高分，带两位小数
-                    "最低分": f"{row['最低分']:.2f}",  # 显示最低分，带两位小数
+                    "最高分": row['最高分'],
+                    "最低分": row['最低分'],
                     "分数段0_59": row['分数段0_59'],
                     "分数段60_69": row['分数段60_69'],
                     "分数段70_79": row['分数段70_79'],
@@ -140,10 +140,7 @@ if os.path.exists(selected_file):
             # 显示表格，按照平均成绩排序
             df_table = pd.DataFrame(table_data)
             df_table['平均成绩'] = pd.to_numeric(df_table['平均成绩'], errors='coerce')
-            st.table(df_table.sort_values(by '平均成绩', ascending=(ascending == '升序')))
+            st.table(df_table.sort_values(by='平均成绩', ascending=(ascending == '升序')))
 
 else:
     st.error("当前目录下没有找到'作业统计.xlsx'文件。")
-```
-
-This Python script ensures that the scores are displayed with two decimal places in the output.
