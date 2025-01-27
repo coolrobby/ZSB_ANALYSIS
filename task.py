@@ -1,6 +1,3 @@
-To adjust the code to display the scores with two decimal places, you need to modify the formatting in the `table_row` construction section. Here is the adjusted code:
-
-```python
 import pandas as pd
 import streamlit as st
 import altair as alt
@@ -143,10 +140,10 @@ if os.path.exists(selected_file):
             # 显示表格，按照平均成绩排序
             df_table = pd.DataFrame(table_data)
             df_table['平均成绩'] = pd.to_numeric(df_table['平均成绩'], errors='coerce')
-            st.table(df_table.sort_values(by='平均成绩', ascending=(ascending == '升序')))
+            st.table(df_table.sort_values(by '平均成绩', ascending=(ascending == '升序')))
 
 else:
     st.error("当前目录下没有找到'作业统计.xlsx'文件。")
 ```
 
-This code ensures that the average scores, highest scores, and lowest scores are displayed with two decimal places.
+This Python script ensures that the scores are displayed with two decimal places in the output.
