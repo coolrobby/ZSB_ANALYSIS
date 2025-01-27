@@ -69,15 +69,15 @@ if file_list:
             # 动态分组，按用户选择的维度进行分组
             groupby_columns = [selected_dimension]
 
-            # 按选定维度进行合并统计：计算总人数、出勤人数和缺勤人数
+            # 按选定维度进行合并统计：计算总人次、出勤人次和缺勤人次
             attendance_by_dimension = df_filtered.groupby(groupby_columns).agg(
-                总人数=('姓名', 'size'),
-                出勤人数=('出勤状态', lambda x: (x == '出勤').sum()),
-                缺勤人数=('出勤状态', lambda x: (x == '缺勤').sum())
+                总人次=('姓名', 'size'),
+                出勤人次=('出勤状态', lambda x: (x == '出勤').sum()),
+                缺勤人次=('出勤状态', lambda x: (x == '缺勤').sum())
             ).reset_index()
 
             # 计算出勤率
-            attendance_by_dimension['出勤率'] = (attendance_by_dimension['出勤人数'] / attendance_by_dimension['总人数']) * 100
+            attendance_by_dimension['出勤率'] = (attendance_by_dimension['出勤人次'] / attendance_by_dimension['总人次']) * 100
 
             # 创建一个新的列，确保出勤率为 100% 的数据排在前面
             attendance_by_dimension['排序出勤率'] = attendance_by_dimension['出勤率'].apply(lambda x: -1 if x == 100 else x)
@@ -92,7 +92,7 @@ if file_list:
             bar_chart = alt.Chart(attendance_by_dimension_sorted).mark_bar().encode(
                 x=alt.X('出勤率', sort='-x'),  # 根据出勤率排序
                 y=alt.Y(selected_dimension, sort='-x'),  # Y轴为维度列，按出勤率排序
-                tooltip=[selected_dimension, '总人数', '出勤人数', '缺勤人数', '出勤率']
+                tooltip=[selected_dimension, '总人次', '出勤人次', '缺勤人次', '出勤率']
             ).properties(
                 title=f"{selected_dimension} 的出勤情况"
             )
@@ -117,10 +117,10 @@ if file_list:
                 # 将每个维度的信息添加到表格数据
                 table_row = {selected_dimension: row[selected_dimension]}
                 table_row.update({
-                    "总人数": row['总人数'],
-                    "出勤人数": row['出勤人数'],
+                    "总人次": row['总人次'],
+                    "出勤人次": row['出勤人次'],
                     "出勤率": f"{row['出勤率']:.2f}%",
-                    "缺勤人数": row['缺勤人数'],
+                    "缺勤人次": row['缺勤人次'],
                     "缺勤学生": absent_names_str if show_absent_students else ""
                 })
                 table_data.append(table_row)
