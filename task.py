@@ -78,22 +78,19 @@ if os.path.exists(selected_file):
             ).reset_index()
 
             # 处理计算结果中的NaN值
-            stats_by_dimension['平均成绩'] = stats_by_dimension['平均成绩'].fillna(0).round(2)
+            stats_by_dimension['平均成绩'] = stats_by_dimension['平均成绩'].fillna(0)
             stats_by_dimension['及格人数'] = stats_by_dimension['及格人数'].fillna(0)
             stats_by_dimension['实考人次'] = stats_by_dimension['实考人次'].fillna(0)
             stats_by_dimension['缺考人数'] = stats_by_dimension['缺考人数'].fillna(0)
             stats_by_dimension['缺考名单'] = stats_by_dimension['缺考名单'].fillna('')
-            stats_by_dimension['最高分'] = stats_by_dimension['最高分'].fillna(0).round(2)
-            stats_by_dimension['最低分'] = stats_by_dimension['最低分'].fillna(0).round(2)
+            stats_by_dimension['最高分'] = stats_by_dimension['最高分'].fillna(0)
+            stats_by_dimension['最低分'] = stats_by_dimension['最低分'].fillna(0)
             stats_by_dimension['分数段0_59'] = stats_by_dimension['分数段0_59'].fillna(0)
             stats_by_dimension['分数段60_69'] = stats_by_dimension['分数段60_69'].fillna(0)
             stats_by_dimension['分数段70_79'] = stats_by_dimension['分数段70_79'].fillna(0)
             stats_by_dimension['分数段80_89'] = stats_by_dimension['分数段80_89'].fillna(0)
             stats_by_dimension['分数段90_99'] = stats_by_dimension['分数段90_99'].fillna(0)
             stats_by_dimension['分数段100'] = stats_by_dimension['分数段100'].fillna(0)
-
-            # 计算及格率
-            stats_by_dimension['及格率'] = (stats_by_dimension['及格人数'] / stats_by_dimension['实考人次'] * 100).fillna(0).round(2)
 
             # 默认按“平均成绩”排序
             ascending = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
@@ -124,14 +121,13 @@ if os.path.exists(selected_file):
                 table_row = {selected_dimension: row[selected_dimension]}
                 table_row.update({
                     "总人次": row['总人次'],
-                    "平均成绩": f"{row['平均成绩']:.2f}",  # 显示平均成绩，带两位小数
+                    "平均成绩": round(row['平均成绩'], 2),  # 显示平均成绩，带两位小数
                     "及格人数": row['及格人数'],
-                    "及格率": f"{row['及格率']:.2f}%",  # 显示及格率，带百分号
                     "实考人次": row['实考人次'],
                     "缺考人数": row['缺考人数'],
                     "缺考名单": row['缺考名单'],
-                    "最高分": f"{row['最高分']:.2f}",  # 显示最高分，带两位小数
-                    "最低分": f"{row['最低分']:.2f}",  # 显示最低分，带两位小数
+                    "最高分": round(row['最高分'], 2),  # 显示最高分，带两位小数
+                    "最低分": round(row['最低分'], 2),  # 显示最低分，带两位小数
                     "分数段0_59": row['分数段0_59'],
                     "分数段60_69": row['分数段60_69'],
                     "分数段70_79": row['分数段70_79'],
