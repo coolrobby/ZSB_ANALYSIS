@@ -52,22 +52,24 @@ if os.path.exists(selected_file):
             available_dimensions.append('课程')  # 如果选择了课程，则显示“课程”维度
 
         # 用户选择的维度
-        selected_dimension = st.selectbox("选择分析的维度", available_dimensions, index=1)  # 默认选择“院系”
+        selected_dimension = st.selectbox("选择分析的维度", available_dimensions, index=4)  # 默认选择“授课班级”
 
         if selected_dimension:
             # 动态分组，按用户选择的维度进行分组
             groupby_columns = [selected_dimension]
 
-            # 按选定维度进行合并统计：计算观看时长的平均值、最大值和最小值
+            # 按选定维度进行合并统计：计算观看时长的总和、平均值、最大值和最小值
             watch_time_stats_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人次=('姓名', 'size'),
-                平均观看时长=('观看时长', 'mean'),
+                总观看时长=('观看时长', 'sum'),
                 最高观看时长=('观看时长', 'max'),
-                最低观看时长=('观看时长', 'min')
+                最低观看时长=('观看时长', 'min'),
+                已观看人次=('观看时长', lambda x: (x > 0).sum()),
+                未观看人次=('观看时长', lambda x: (x == 0).sum() or (x.isna()).sum())
             ).reset_index()
 
             # 确保观看时长是数值格式，并且去除无效值
-            watch_time_stats_by_dimension['平均观看时长'] = pd.to_numeric(watch_time_stats_by_dimension['平均观看时长'], errors='coerce')
+            watch_time_stats_by_dimension['平均观看时长'] = pd.to_numeric(watch_time_stats_by_dimension['总观看时长'], errors='coerce') / watch_time_stats_by_dimension['总人次']
             watch_time_stats_by_dimension['最高观看时长'] = pd.to_numeric(watch_time_stats_by_dimension['最高观看时长'], errors='coerce')
             watch_time_stats_by_dimension['最低观看时长'] = pd.to_numeric(watch_time_stats_by_dimension['最低观看时长'], errors='coerce')
 
@@ -90,7 +92,7 @@ if os.path.exists(selected_file):
             bar_chart = alt.Chart(watch_time_stats_by_dimension_sorted).mark_bar().encode(
                 x=alt.X('平均观看时长', sort='-x' if not ascending else 'x'),  # 确保根据升降序选择排序
                 y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),  # Y轴为维度列，按平均观看时长排序
-                tooltip=[selected_dimension, '总人次', '平均观看时长', '最高观看时长', '最低观看时长']
+                tooltip=[selected_dimension, '总人次', '平均观看时长', '最高观看时长', '最低观看时长', '已观看人次', '未观看人次']
             ).properties(
                 title=f"{selected_dimension} 的观看时长分析"
             )
@@ -119,6 +121,8 @@ if os.path.exists(selected_file):
                     "平均观看时长": f"{row['平均观看时长']:.2f}",  # 显示平均观看时长，带两位小数
                     "最高观看时长": f"{row['最高观看时长']:.2f}",
                     "最低观看时长": f"{row['最低观看时长']:.2f}",
+                    "已观看人次": row['已观看人次'],
+                    "未观看人次": row['未观看人次'],
                     "未观看名单": unwatched_names_str if show_unwatched_list else ""
                 })
                 table_data.append(table_row)
