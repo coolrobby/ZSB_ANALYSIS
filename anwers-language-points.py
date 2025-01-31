@@ -4,7 +4,7 @@ import altair as alt
 import os
 
 # 设置页面标题
-st.title("答题情况分析")
+st.title("知识点掌握度分析")
 
 # 读取当前目录下的答题情况分析.xlsx文件
 selected_file = '答题情况分析.xlsx'
