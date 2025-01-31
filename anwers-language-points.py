@@ -35,8 +35,8 @@ if os.path.exists(selected_file):
     # 用户选择的课程
     selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
     
-    # 选项：是否显示“未完成学生”
-    show_absent_students = st.checkbox("显示未完成学生", value=False)
+    # 选项：是否显示“答错学生”
+    show_absent_students = st.checkbox("显示答错学生", value=False)
 
     if selected_dates:
         # 过滤选择的知识点数据
@@ -64,34 +64,34 @@ if os.path.exists(selected_file):
             # 按选定维度进行合并统计：计算总人次、出勤人次和缺勤人次
             attendance_by_dimension = df_filtered.groupby(groupby_columns).agg(
                 总人次=('姓名', 'size'),
-                已完成人次=('答题情况', lambda x: (x == '已完成').sum()),
-                未完成人次=('答题情况', lambda x: (x == '未完成').sum())
+                答对人次=('答题情况', lambda x: (x == '正确').sum()),
+                答错人次=('答题情况', lambda x: (x == '错误').sum())
             ).reset_index()
 
-            # 计算完成率，去掉百分号，只显示数字
-            attendance_by_dimension['完成率'] = (attendance_by_dimension['已完成人次'] / attendance_by_dimension['总人次']) * 100
+            # 计算正确率，去掉百分号，只显示数字
+            attendance_by_dimension['正确率'] = (attendance_by_dimension['答对人次'] / attendance_by_dimension['总人次']) * 100
 
-            # 确保完成率是数值格式，并且去除无效值
-            attendance_by_dimension['完成率'] = pd.to_numeric(attendance_by_dimension['完成率'], errors='coerce')
+            # 确保正确率是数值格式，并且去除无效值
+            attendance_by_dimension['正确率'] = pd.to_numeric(attendance_by_dimension['正确率'], errors='coerce')
 
             # 处理NaN和无效值，将它们设为0或者其他默认值
-            attendance_by_dimension['完成率'] = attendance_by_dimension['完成率'].fillna(0)
+            attendance_by_dimension['正确率'] = attendance_by_dimension['正确率'].fillna(0)
 
-            # 对数据按完成率降序或升序排列
+            # 对数据按正确率降序或升序排列
             sort_order = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
             ascending = False if sort_order == '降序' else True
 
-            # 对数据按完成率排序
-            attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by='完成率', ascending=ascending)
+            # 对数据按正确率排序
+            attendance_by_dimension_sorted = attendance_by_dimension.sort_values(by='正确率', ascending=ascending)
 
             # 创建柱形图并排序
             st.subheader(f"按 {selected_dimension} 维度分析")
 
-            # 创建柱形图，X轴为完成率，Y轴为选择的维度
+            # 创建柱形图，X轴为正确率，Y轴为选择的维度
             bar_chart = alt.Chart(attendance_by_dimension_sorted).mark_bar().encode(
-                x=alt.X('完成率', sort='-x' if not ascending else 'x'),  # 确保根据升降序选择排序
-                y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),  # Y轴为维度列，按完成率排序
-                tooltip=[selected_dimension, '总人次', '已完成人次', '未完成人次', '完成率']
+                x=alt.X('正确率', sort='-x' if not ascending else 'x'),  # 确保根据升降序选择排序
+                y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),  # Y轴为维度列，按正确率排序
+                tooltip=[selected_dimension, '总人次', '答对人次', '答错人次', '正确率']
             ).properties(
                 title=f"{selected_dimension} 的任务答题情况"
             )
@@ -102,33 +102,33 @@ if os.path.exists(selected_file):
             table_data = []
 
             for index, row in attendance_by_dimension_sorted.iterrows():
-                # 查找未完成学生
+                # 查找答错学生
                 absent_names_str = ""
                 if show_absent_students:
                     absent_students = df_filtered[ 
                         (df_filtered[selected_dimension] == row[selected_dimension]) & 
-                        (df_filtered['答题情况'] == '未完成')
+                        (df_filtered['答题情况'] == '答错')
                     ]
 
                     absent_names = absent_students['姓名'].tolist()
-                    absent_names_str = ", ".join(absent_names) if absent_names else "所有学生都已经完成任务"
+                    absent_names_str = ", ".join(absent_names) if absent_names else "所有学生都已经答对"
 
                 # 将每个维度的信息添加到表格数据
                 table_row = {selected_dimension: row[selected_dimension]}
                 table_row.update({
                     "总人次": row['总人次'],
-                    "已完成人次": row['已完成人次'],
-                    "完成率": f"{row['完成率']:.2f}",  # 显示完成率为数字，带两位小数
-                    "未完成人次": row['未完成人次'],
-                    "未完成学生": absent_names_str if show_absent_students else ""
+                    "答对人次": row['答对人次'],
+                    "正确率": f"{row['正确率']:.2f}",  # 显示正确率为数字，带两位小数
+                    "答错人次": row['答错人次'],
+                    "答错学生": absent_names_str if show_absent_students else ""
                 })
                 table_data.append(table_row)
 
-            # 显示表格，按照完成率排序
-            # 强制将“完成率”列的值转为数值类型，以确保正确排序
+            # 显示表格，按照正确率排序
+            # 强制将“正确率”列的值转为数值类型，以确保正确排序
             df_table = pd.DataFrame(table_data)
-            df_table['完成率'] = pd.to_numeric(df_table['完成率'], errors='coerce')
-            st.table(df_table.sort_values(by='完成率', ascending=ascending))
+            df_table['正确率'] = pd.to_numeric(df_table['正确率'], errors='coerce')
+            st.table(df_table.sort_values(by='正确率', ascending=ascending))
 
 else:
     st.error("当前目录下没有找到'答题情况分析.xlsx'文件。")
