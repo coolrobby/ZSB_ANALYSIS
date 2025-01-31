@@ -25,16 +25,18 @@ if os.path.exists(selected_file):
 
     # 获取所有可用的知识点
     available_dates = df['知识点'].unique()
-    
-    # 用户选择的知识点
-    selected_dates = st.multiselect("选择查看的知识点", available_dates, default=available_dates)
 
     # 获取所有可用的课程
     available_courses = df['课程'].unique()
-    
-    # 用户选择的课程
+
+    # 获取所有可用的来源
+    available_sources = df['来源'].unique() if '来源' in df.columns else []
+
+    # 用户选择的知识点、课程和来源
+    selected_dates = st.multiselect("选择查看的知识点", available_dates, default=available_dates)
     selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
-    
+    selected_sources = st.multiselect("选择查看的来源", available_sources, default=available_sources)
+
     # 选项：是否显示“答错学生”
     show_absent_students = st.checkbox("显示答错学生", value=False)
 
@@ -46,11 +48,15 @@ if os.path.exists(selected_file):
         if selected_courses:
             df_filtered = df_filtered[df_filtered['课程'].isin(selected_courses)]
 
+        # 如果用户选择了来源，则过滤来源
+        if selected_sources:
+            df_filtered = df_filtered[df_filtered['来源'].isin(selected_sources)]
+
         # 获取所有可用的维度（列名），如果没有选择课程，就去除“课程”维度
         available_dimensions = [
             '学校', '院系', '专业', '行政班级', '授课班级', '教师'
         ]
-        
+
         if selected_courses:
             available_dimensions.append('课程')  # 如果选择了课程，则显示“课程”维度
 
@@ -131,4 +137,4 @@ if os.path.exists(selected_file):
             st.table(df_table.sort_values(by='正确率', ascending=ascending))
 
 else:
-    st.error("当前目录下没有找到'答题情况分析.xlsx'文件。") 
+    st.error("当前目录下没有找到'答题情况分析.xlsx'文件。")
