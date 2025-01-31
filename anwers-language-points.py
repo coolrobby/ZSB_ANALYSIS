@@ -35,7 +35,7 @@ if os.path.exists(selected_file):
     # 用户选择的知识点、课程和来源
     selected_dates = st.multiselect("选择查看的知识点", available_dates, default=available_dates)
     selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
-    selected_sources = st.multiselect("选择查看的来源", available_sources, default=available_sources)
+    selected_sources = st.multiselect("选择查看的作业/测试", available_sources, default=available_sources)
 
     # 选项：是否显示“答错学生”
     show_absent_students = st.checkbox("显示答错学生", value=False)
