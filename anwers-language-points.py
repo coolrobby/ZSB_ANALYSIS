@@ -99,7 +99,7 @@ if os.path.exists(selected_file):
                 y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),  # Y轴为维度列，按正确率排序
                 tooltip=[selected_dimension, '总人次', '答对人次', '答错人次', '正确率']
             ).properties(
-                title=f"{selected_dimension} 的任务答题情况"
+                title=f"{selected_dimension} 的答题情况"
             )
 
             st.altair_chart(bar_chart, use_container_width=True)
