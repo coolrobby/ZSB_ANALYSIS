@@ -117,7 +117,8 @@ if os.path.exists(selected_file):
                     ]
 
                     absent_names = absent_students['姓名'].tolist()
-                    absent_names_str = ", ".join(absent_names) if absent_names else "所有学生都已经答对"
+                    absent_names_set = set(absent_names)  # 去重
+                    absent_names_str = ", ".join(sorted(absent_names_set)) if absent_names_set else "所有学生都已经答对"
 
                 # 将每个维度的信息添加到表格数据
                 table_row = {selected_dimension: row[selected_dimension]}
