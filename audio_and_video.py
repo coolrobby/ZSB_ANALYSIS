@@ -4,7 +4,7 @@ import altair as alt
 import os
 
 # 设置页面标题
-st.title("音视频观看详情")
+st.title("音视频观看详情pro")
 
 # 读取当前目录下的音视频观看详情.xlsx文件
 selected_file = '音视频观看详情.xlsx'
@@ -24,7 +24,13 @@ if os.path.exists(selected_file):
     available_dates = df['视频'].unique()
     
     # 用户选择的视频
-    selected_dates = st.multiselect("选择查看的视频", available_dates, default=list(available_dates))  # Make sure it's a list
+    selected_dates = st.multiselect("选择查看的视频", available_dates, default=available_dates)
+
+    # 获取所有可用的课程
+    available_courses = df['课程'].unique()
+    
+    # 用户选择的课程
+    selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
 
     # 选项：是否显示“未观看名单”
     show_unwatched_list = st.checkbox("显示未观看名单", value=False)
@@ -33,10 +39,17 @@ if os.path.exists(selected_file):
         # 过滤选择的视频数据
         df_filtered = df[df['视频'].isin(selected_dates)]
 
-        # 获取所有可用的维度（列名）
+        # 如果用户选择了课程，则过滤课程
+        if selected_courses:
+            df_filtered = df_filtered[df_filtered['课程'].isin(selected_courses)]
+
+        # 获取所有可用的维度（列名），如果没有选择课程，就去除“课程”维度
         available_dimensions = [
             '学校', '院系', '专业', '行政班级', '授课班级', '教师'
         ]
+        
+        if selected_courses:
+            available_dimensions.append('课程')  # 如果选择了课程，则显示“课程”维度
 
         # 用户选择的维度
         selected_dimension = st.selectbox("选择分析的维度", available_dimensions, index=4)  # 默认选择“授课班级”
