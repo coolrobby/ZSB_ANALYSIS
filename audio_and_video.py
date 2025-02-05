@@ -24,13 +24,13 @@ if os.path.exists(selected_file):
     available_dates = df['视频'].unique()
     
     # 用户选择的视频
-    selected_dates = st.multiselect("选择查看的视频", available_dates, default=available_dates)
+    selected_dates = st.multiselect("选择查看的视频", available_dates, default=available_dates.tolist())  # Corrected here
 
     # 获取所有可用的课程
     available_courses = df['课程'].unique()
     
     # 用户选择的课程
-    selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
+    selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses.tolist())  # Corrected here
 
     # 选项：是否显示“未观看名单”
     show_unwatched_list = st.checkbox("显示未观看名单", value=False)
