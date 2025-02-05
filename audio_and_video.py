@@ -4,7 +4,7 @@ import altair as alt
 import os
 
 # 设置页面标题
-st.title("音视频观看详情")
+st.title("音视频观看详情pro")
 
 # 读取当前目录下的音视频观看详情.xlsx文件
 selected_file = '音视频观看详情.xlsx'
@@ -24,13 +24,13 @@ if os.path.exists(selected_file):
     available_dates = df['视频'].unique()
     
     # 用户选择的视频
-    selected_dates = st.multiselect("选择查看的视频", available_dates, default=list(available_dates))  # Make sure it's a list
+    selected_dates = st.multiselect("选择查看的视频", available_dates, default=available_dates)
 
     # 获取所有可用的课程
     available_courses = df['课程'].unique()
     
     # 用户选择的课程
-    selected_courses = st.multiselect("选择查看的课程", available_courses, default=list(available_courses))  # Make sure it's a list
+    selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
 
     # 选项：是否显示“未观看名单”
     show_unwatched_list = st.checkbox("显示未观看名单", value=False)
