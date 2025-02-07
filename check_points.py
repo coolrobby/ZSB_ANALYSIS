@@ -6,12 +6,17 @@ import os
 # 设置页面标题
 st.title("任务点完成详情")
 
-# 读取当前目录下的任务点完成详情.xlsx文件
-selected_file = '任务点完成详情.xlsx'
+# 获取当前目录下所有以“任务点完成详情”开头的文件
+file_list = [f for f in os.listdir() if f.startswith('任务点完成详情') and f.endswith('.xlsx')]
 
-# 检查文件是否存在
-if os.path.exists(selected_file):
-    # 读取数据
+# 如果找不到符合条件的文件，提示用户
+if not file_list:
+    st.error("当前目录下没有找到以'任务点完成详情'开头的文件。")
+else:
+    # 用户选择要分析的文件
+    selected_file = st.selectbox("请选择要分析的文件", file_list)
+
+    # 读取选中的文件
     df = pd.read_excel(selected_file)
 
     # 清理列名，去除可能的空格
@@ -129,6 +134,3 @@ if os.path.exists(selected_file):
             df_table = pd.DataFrame(table_data)
             df_table['完成率'] = pd.to_numeric(df_table['完成率'], errors='coerce')
             st.table(df_table.sort_values(by='完成率', ascending=ascending))
-
-else:
-    st.error("当前目录下没有找到'任务点完成详情.xlsx'文件。")
