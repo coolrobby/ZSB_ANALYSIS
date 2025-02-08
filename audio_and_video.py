@@ -4,7 +4,7 @@ import altair as alt
 import os
 
 # 设置页面标题
-st.title("音视频观看详情pro")
+st.title("音视频观看详情")
 
 # 读取当前目录下的音视频观看详情.xlsx文件
 selected_file = '音视频观看详情.xlsx'
