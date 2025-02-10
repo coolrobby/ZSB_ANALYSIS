@@ -21,11 +21,19 @@ if os.path.exists(knowledge_point_folder):
         # 排序文件按修改时间，选择最新的文件作为默认值
         xlsx_files.sort(key=lambda x: os.path.getmtime(os.path.join(knowledge_point_folder, x)), reverse=True)
         
-        # 用户选择文件，默认选择最新的文件
-        selected_file = st.selectbox("选择要分析的文件", xlsx_files, index=0)
+        # 用户选择文件，默认选择所有文件
+        selected_files = st.multiselect("选择要分析的文件", xlsx_files, default=xlsx_files)
         
-        # 读取选定的Excel文件
-        selected_file_path = os.path.join(knowledge_point_folder, selected_file)
+        # 如果没有选择文件
+        if not selected_files:
+            st.error("请至少选择一个文件进行分析。")
+        else:
+            # 创建一个空的DataFrame来存储合并后的数据
+            df_combined = pd.DataFrame()
+
+            # 遍历选中的文件，逐个读取并合并数据
+            for selected_file in selected_files:
+                selected_file_path = os.path.join(knowledge_point_folder, selected_file)
         
         # 检查文件是否存在
         if os.path.exists(selected_file_path):
