@@ -21,53 +21,52 @@ if os.path.exists(knowledge_point_folder):
         # 排序文件按修改时间，选择最新的文件作为默认值
         xlsx_files.sort(key=lambda x: os.path.getmtime(os.path.join(knowledge_point_folder, x)), reverse=True)
         
-        # 用户选择文件，支持多选
-        selected_files = st.sidebar.multiselect("选择要分析的文件", xlsx_files, default=xlsx_files[:1])
+        # 用户选择文件，默认选择最新的文件
+        selected_file = st.selectbox("选择要分析的文件", xlsx_files, index=0)
         
-        # 检查至少选择了一个文件
-        if not selected_files:
-            st.sidebar.error("请至少选择一个文件进行分析。")
-        else:
-            # 用户选择的知识点（单选）
-            available_dates = [f'知识点{i+1}' for i in range(10)]  # 例子，替换为实际知识点列表
-            selected_date = st.sidebar.selectbox("选择查看的知识点", available_dates)
-            
-            # 读取并合并所有选定的文件数据
-            combined_df = pd.DataFrame()
+        # 读取选定的Excel文件
+        selected_file_path = os.path.join(knowledge_point_folder, selected_file)
+        
+        # 检查文件是否存在
+        if os.path.exists(selected_file_path):
+            # 读取数据
+            df = pd.read_excel(selected_file_path)
 
-            for selected_file in selected_files:
-                selected_file_path = os.path.join(knowledge_point_folder, selected_file)
-                if os.path.exists(selected_file_path):
-                    df = pd.read_excel(selected_file_path)
-                    # 清理列名，去除可能的空格
-                    df.columns = df.columns.str.strip()
-                    # 处理缺失值：将空字符串替换为 NaN
-                    df.replace('', pd.NA, inplace=True)
-                    # 将签到状态“已签”和“教师代签”视为出勤，其他为缺勤
-                    df['答题情况'] = df['核对答案'].apply(lambda x: '正确' if x in ['正确'] else '错误')
-                    # 合并数据
-                    combined_df = pd.concat([combined_df, df], ignore_index=True)
-                else:
-                    st.sidebar.error(f"文件 {selected_file} 未找到。")
+            # 清理列名，去除可能的空格
+            df.columns = df.columns.str.strip()
 
-            # 选择的知识点过滤
-            if selected_date:
-                df_filtered = combined_df[combined_df['知识点'] == selected_date]
-                
-                # 获取所有可用的课程
-                available_courses = df_filtered['课程'].unique()
-                available_sources = df_filtered['来源'].unique() if '来源' in df_filtered.columns else []
+            # 处理缺失值：将空字符串替换为 NaN
+            df.replace('', pd.NA, inplace=True)
 
-                # 用户选择的课程和来源
-                selected_courses = st.sidebar.multiselect("选择查看的课程", available_courses, default=available_courses)
-                selected_sources = st.sidebar.multiselect("选择查看的作业/测试", available_sources, default=available_sources)
+            # 将签到状态“已签”和“教师代签”视为出勤，其他为缺勤
+            df['答题情况'] = df['核对答案'].apply(lambda x: '正确' if x in ['正确'] else '错误')
 
-                # 选项：是否显示“答错学生”
-                show_absent_students = st.sidebar.checkbox("显示答错学生", value=False)
+            # 获取所有可用的知识点
+            available_dates = df['知识点'].unique()
 
-                # 过滤选择的课程和来源数据
+            # 获取所有可用的课程
+            available_courses = df['课程'].unique()
+
+            # 获取所有可用的来源
+            available_sources = df['来源'].unique() if '来源' in df.columns else []
+
+            # 用户选择的知识点、课程和来源
+            selected_dates = st.multiselect("选择查看的知识点", available_dates, default=available_dates)
+            selected_courses = st.multiselect("选择查看的课程", available_courses, default=available_courses)
+            selected_sources = st.multiselect("选择查看的作业/测试", available_sources, default=available_sources)
+
+            # 选项：是否显示“答错学生”
+            show_absent_students = st.checkbox("显示答错学生", value=False)
+
+            if selected_dates:
+                # 过滤选择的知识点数据
+                df_filtered = df[df['知识点'].isin(selected_dates)]
+
+                # 如果用户选择了课程，则过滤课程
                 if selected_courses:
                     df_filtered = df_filtered[df_filtered['课程'].isin(selected_courses)]
+
+                # 如果用户选择了来源，则过滤来源
                 if selected_sources:
                     df_filtered = df_filtered[df_filtered['来源'].isin(selected_sources)]
 
@@ -80,7 +79,7 @@ if os.path.exists(knowledge_point_folder):
                     available_dimensions.append('课程')  # 如果选择了课程，则显示“课程”维度
 
                 # 用户选择的维度
-                selected_dimension = st.sidebar.selectbox("选择分析的维度", available_dimensions, index=1)  # 默认选择“院系”
+                selected_dimension = st.selectbox("选择分析的维度", available_dimensions, index=1)  # 默认选择“院系”
 
                 if selected_dimension:
                     # 动态分组，按用户选择的维度进行分组
@@ -101,7 +100,7 @@ if os.path.exists(knowledge_point_folder):
                     attendance_by_dimension['正确率'] = attendance_by_dimension['正确率'].fillna(0)
 
                     # 对数据按正确率降序或升序排列
-                    sort_order = st.sidebar.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
+                    sort_order = st.radio("选择排序方式", ('降序', '升序'), index=0)  # 默认降序
                     ascending = False if sort_order == '降序' else True
 
                     # 对数据按正确率排序
@@ -155,7 +154,7 @@ if os.path.exists(knowledge_point_folder):
                     df_table = pd.DataFrame(table_data)
                     df_table['正确率'] = pd.to_numeric(df_table['正确率'], errors='coerce')
                     st.table(df_table.sort_values(by='正确率', ascending=ascending))
-            else:
-                st.error("请选择一个有效的知识点进行查看。")
+        else:
+            st.error(f"无法读取文件：{selected_file_path}")
 else:
     st.error("当前目录下没有‘知识点’子文件夹。")
