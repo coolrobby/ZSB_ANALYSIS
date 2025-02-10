@@ -21,8 +21,9 @@ if os.path.exists(knowledge_point_folder):
         # 排序文件按修改时间，选择最新的文件作为默认值
         xlsx_files.sort(key=lambda x: os.path.getmtime(os.path.join(knowledge_point_folder, x)), reverse=True)
         
-        # 用户选择文件，默认选择所有文件
-        selected_files = st.multiselect("选择要分析的文件", xlsx_files, default=xlsx_files)
+        # 用户选择文件，默认选择第一个文件
+        selected_files = st.multiselect("选择要分析的文件", xlsx_files, default=xlsx_files[:1])
+
         
         # 如果没有选择文件
         if not selected_files:
