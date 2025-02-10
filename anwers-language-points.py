@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import altair as alt
 import os
 
 # 设置页面标题
@@ -91,10 +92,8 @@ if os.path.exists(knowledge_point_folder):
                         答错人次=('答题情况', lambda x: (x == '错误').sum())
                     ).reset_index()
 
-                    # 计算正确率，去掉百分号，只显示数字
+                    # 确保'正确率'列是数值型
                     attendance_by_dimension['正确率'] = (attendance_by_dimension['答对人次'] / attendance_by_dimension['总人次']) * 100
-
-                    # 确保正确率是数值格式，并且去除无效值
                     attendance_by_dimension['正确率'] = pd.to_numeric(attendance_by_dimension['正确率'], errors='coerce')
 
                     # 处理NaN和无效值，将它们设为0或者其他默认值
@@ -110,16 +109,19 @@ if os.path.exists(knowledge_point_folder):
                     # 创建柱形图并排序
                     st.subheader(f"按 {selected_dimension} 维度分析")
 
-                    # 创建柱形图，X轴为正确率，Y轴为选择的维度
-                    bar_chart = alt.Chart(attendance_by_dimension_sorted).mark_bar().encode(
-                        x=alt.X('正确率', sort='-x' if not ascending else 'x'),  # 确保根据升降序选择排序
-                        y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),  # Y轴为维度列，按正确率排序
-                        tooltip=[selected_dimension, '总人次', '答对人次', '答错人次', '正确率']
-                    ).properties(
-                        title=f"{selected_dimension} 的答题情况"
-                    )
+                    # 确保‘正确率’列和选择的维度存在并为有效类型
+                    if '正确率' in attendance_by_dimension_sorted.columns and selected_dimension in attendance_by_dimension_sorted.columns:
+                        bar_chart = alt.Chart(attendance_by_dimension_sorted).mark_bar().encode(
+                            x=alt.X('正确率', sort='-x' if not ascending else 'x'),
+                            y=alt.Y(selected_dimension, sort='-x' if not ascending else 'x'),
+                            tooltip=[selected_dimension, '总人次', '答对人次', '答错人次', '正确率']
+                        ).properties(
+                            title=f"{selected_dimension} 的答题情况"
+                        )
 
-                    st.altair_chart(bar_chart, use_container_width=True)
+                        st.altair_chart(bar_chart, use_container_width=True)
+                    else:
+                        st.error("数据缺失，无法生成图表")
 
                     # 构建每个维度的信息表格
                     table_data = []
@@ -149,7 +151,6 @@ if os.path.exists(knowledge_point_folder):
                         table_data.append(table_row)
 
                     # 显示表格，按照正确率排序
-                    # 强制将“正确率”列的值转为数值类型，以确保正确排序
                     df_table = pd.DataFrame(table_data)
                     df_table['正确率'] = pd.to_numeric(df_table['正确率'], errors='coerce')
                     st.table(df_table.sort_values(by='正确率', ascending=ascending))
